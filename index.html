@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JobSpark 職缺戰情室 V3.0</title>
+    <title>JobSpark 職缺戰情室</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,6 +16,7 @@
             --chrome-mid: #e0e0e0;
             --chrome-dark: #8c8c8c;
             --bg-dark: #050505;
+            --neon-blue: #4cc9f0;
         }
 
         body {
@@ -131,6 +132,24 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
+        /* 連結按鈕特效 */
+        .link-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .link-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .link-btn:hover::after {
+            left: 100%;
+        }
+
         /* --- 背景巨型浮動文字特效 --- */
         .background-ghost-text {
             position: absolute;
@@ -192,7 +211,7 @@
             JobSpark
         </h1>
         <p class="text-xs text-gray-400 mb-10 tracking-widest font-mono border-l-2 border-white pl-2">
-            智慧職涯戰情系統 V3.0
+            智慧職涯戰情系統 V3.1
         </p>
 
         <div class="mb-8 space-y-5">
@@ -311,10 +330,10 @@
                     <div class="grid grid-cols-1 gap-6">
                         <div class="bg-white/5 p-6 rounded-xl border border-white/10">
                             <h4 class="font-bold text-white text-sm mb-4 uppercase tracking-widest flex items-center">
-                                <span class="text-lg mr-2">💎</span> 核心技能與學習資源推薦
+                                <span class="text-lg mr-2">💎</span> 核心技能與學習資源推薦 (Live Links)
                             </h4>
-                            <p class="text-xs text-gray-400 mb-4">針對高價值技能為您精選的課程與頻道：</p>
-                            <ul id="resourceList" class="space-y-4 text-sm text-gray-300"></ul>
+                            <p class="text-xs text-gray-400 mb-4">點擊下方卡片即可前往課程或頻道：</p>
+                            <div id="resourceList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                         </div>
                         <div class="bg-white/5 p-6 rounded-xl border border-white/10">
                             <h4 class="font-bold text-white text-sm mb-4 uppercase tracking-widest flex items-center">
@@ -330,7 +349,7 @@
                         <h4 class="font-bold text-white text-sm uppercase flex items-center tracking-widest">
                             <span class="w-1 h-4 bg-white mr-3 shadow-[0_0_8px_#fff]"></span> 2025 精選職缺掃描
                         </h4>
-                        <span class="text-[10px] text-gray-500 font-mono">SOURCE: GOOGLE SEARCH</span>
+                        <span class="text-[10px] text-gray-500 font-mono">SOURCE: GOOGLE SEARCH / 104 / YOURATOR</span>
                     </div>
                     <div id="jobsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         </div>
@@ -370,13 +389,13 @@
             [步驟 1] 執行 Google Search (必須)：
             1. 找出 JD 中出現頻率最高的 5 個硬技能 (Hard Skills)。
             2. 找出該職級的平均月薪範圍 (TWD)。
-            3. 搜尋針對前 3 名關鍵技能的「最新學習資源」，包含具體的：
+            3. 搜尋針對前 3 名關鍵技能的「最新學習資源」，務必包含：
                - 線上課程名稱 (如 Udemy, Coursera, Hahow)
                - YouTube 頻道名稱
+               - **實際 URL 連結** (若無法取得精確連結，請找官網或相關搜尋頁面)。
             4. 搜尋 4-6 個「2025年」最新的相關職缺 (公司名稱 + 職稱 + 地點)。
             
-            [步驟 2] 輸出 JSON 格式 (嚴格遵守)：
-            \`\`\`json
+            [步驟 2] 輸出 JSON 格式 (嚴格遵守，不要使用 Markdown code block)：
             {
                 "salary_range": "40K - 55K",
                 "top_skill_name": "React.js",
@@ -389,30 +408,29 @@
                         "skill": "React",
                         "type": "Course",
                         "name": "Udemy: The Complete React Developer Course",
-                        "platform": "Udemy"
+                        "platform": "Udemy",
+                        "url": "https://www.udemy.com/course/react-the-complete-guide-incl-redux/"
                     },
                     {
                         "skill": "TypeScript",
                         "type": "Channel",
-                        "name": "Web Dev Simplified / The Net Ninja",
-                        "platform": "YouTube"
+                        "name": "Web Dev Simplified",
+                        "platform": "YouTube",
+                        "url": "https://www.youtube.com/c/WebDevSimplified"
                     }
                 ],
                 "latest_jobs": [
                     {
                         "company": "台積電 TSMC",
                         "title": "Front-end Engineer",
-                        "location": "Hsinchu"
-                    },
-                    {
-                        "company": "Shopee",
-                        "title": "Web Developer",
-                        "location": "Taipei"
+                        "location": "Hsinchu",
+                        "url": "" 
                     }
                 ],
                 "learning_path": "給使用者的具體學習建議 (繁體中文)..."
             }
-            \`\`\`
+            
+            [備註] 若職缺找不到直接 URL，請在 JSON 的 url 欄位留空，前端會自動產生搜尋連結。但學習資源請盡量提供 URL。
             [步驟 3] 產生報告：在 JSON 之前，提供一段約 200 字的市場趨勢觀察報告 (繁體中文)，重點放在 2025 年的新技術變革對該職位的影響。
             `;
 
@@ -462,18 +480,21 @@
             
             document.querySelector('.background-ghost-text').style.display = 'none';
             
-            document.getElementById('aiReportText').innerHTML = '<p class="text-center text-white mt-10 animate-pulse font-mono tracking-widest">>> 建立連線中...<br>>> 正在擷取 2025 職缺節點數據...</p>';
+            document.getElementById('aiReportText').innerHTML = '<p class="text-center text-white mt-10 animate-pulse font-mono tracking-widest">>> 建立連線中...<br>>> 正在擷取 2025 職缺與連結節點數據...</p>';
 
             try {
                 const rawText = await fetchGeminiData(apiKey, { jobTitle, userLevel });
-                const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
+                // 嘗試更寬鬆的 JSON 匹配
+                const jsonMatch = rawText.match(/\{[\s\S]*\}/); 
                 let displayText = rawText;
                 let data = null;
 
                 if (jsonMatch) {
                     try {
-                        data = JSON.parse(jsonMatch[1]);
-                        displayText = rawText.replace(jsonMatch[0], "");
+                        // 找到最後一個完整的 JSON 物件 (避免抓到前面的說明)
+                        const possibleJson = jsonMatch[0].substring(jsonMatch[0].indexOf('{'), jsonMatch[0].lastIndexOf('}') + 1);
+                        data = JSON.parse(possibleJson);
+                        displayText = rawText.replace(possibleJson, "").replace(/```json/g, "").replace(/```/g, "");
                     } catch (e) { console.error("JSON Parse Error", e); }
                 }
 
@@ -485,38 +506,58 @@
 
                     if (data.heatmap) renderChart(data.heatmap.labels, data.heatmap.data);
 
-                    // 渲染學習資源
+                    // 渲染學習資源 (帶連結)
                     if (data.learning_resources) {
-                        const listHtml = data.learning_resources.map(item => 
-                            `<li class="flex flex-col bg-black/30 p-4 rounded-lg border border-white/5 hover:bg-white/5 transition">
-                                <div class="flex items-center mb-1">
-                                    <span class="text-xs font-bold text-white bg-gray-700 px-2 py-0.5 rounded mr-2">${item.skill}</span>
-                                    <span class="text-xs text-gray-400 border border-gray-600 px-2 rounded-full">${item.type}</span>
+                        const listHtml = data.learning_resources.map(item => {
+                            // 若無 URL，則生成 Google 搜尋連結
+                            const safeUrl = item.url && item.url.startsWith('http') 
+                                ? item.url 
+                                : `https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + item.platform)}`;
+                            
+                            return `
+                            <a href="${safeUrl}" target="_blank" class="link-btn flex flex-col bg-black/30 p-4 rounded-lg border border-white/5 hover:bg-white/10 hover:border-white/40 transition group no-underline">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <span class="text-xs font-bold text-black bg-white px-2 py-0.5 rounded mr-2 group-hover:bg-[#4cc9f0] transition-colors">${item.skill}</span>
+                                        <span class="text-[10px] text-gray-400 border border-gray-600 px-2 rounded-full uppercase">${item.type}</span>
+                                    </div>
+                                    <span class="text-white transform group-hover:translate-x-1 transition text-xs">↗</span>
                                 </div>
-                                <div class="text-chrome font-bold text-sm mb-1">${item.name}</div>
-                                <div class="text-[10px] text-gray-500 font-mono">PLATFORM: ${item.platform}</div>
-                            </li>`
-                        ).join('');
+                                <div class="text-chrome font-bold text-sm mb-1 line-clamp-2">${item.name}</div>
+                                <div class="text-[10px] text-gray-500 font-mono mt-auto pt-2">PLATFORM: ${item.platform}</div>
+                            </a>`;
+                        }).join('');
                         document.getElementById('resourceList').innerHTML = listHtml;
                     }
                     
                     if (data.learning_path) document.getElementById('learningPath').innerText = data.learning_path;
 
-                    // 渲染職缺卡片
+                    // 渲染職缺卡片 (帶連結)
                     if (data.latest_jobs) {
-                        const jobsHtml = data.latest_jobs.map(job => 
-                            `<div class="job-card p-5 rounded-xl cursor-pointer" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(job.company + ' ' + job.title + ' 職缺')}', '_blank')">
+                        const jobsHtml = data.latest_jobs.map(job => {
+                            // 若 AI 給出 URL 則使用，否則生成搜尋連結
+                            const jobUrl = job.url && job.url.startsWith('http') 
+                                ? job.url 
+                                : `https://www.google.com/search?q=${encodeURIComponent(job.company + ' ' + job.title + ' 職缺')}`;
+
+                            return `
+                            <div class="job-card p-5 rounded-xl flex flex-col h-full relative group">
                                 <div class="flex justify-between items-start mb-2">
-                                    <h5 class="text-white font-bold text-lg">${job.title}</h5>
-                                    <span class="text-[10px] bg-white/10 px-2 py-1 rounded text-white">${job.location}</span>
+                                    <h5 class="text-white font-bold text-lg leading-tight pr-2">${job.title}</h5>
+                                    <span class="text-[10px] bg-white/10 px-2 py-1 rounded text-white whitespace-nowrap">${job.location}</span>
                                 </div>
-                                <p class="text-gray-400 text-sm font-mono mb-4 border-l-2 border-gray-600 pl-2">${job.company}</p>
-                                <div class="flex justify-between items-center mt-auto">
-                                    <span class="text-[10px] text-green-400 animate-pulse">● ACTIVE 2025</span>
-                                    <span class="text-xs text-white border-b border-transparent hover:border-white transition-colors">Apply -></span>
+                                <p class="text-gray-400 text-sm font-mono mb-6 border-l-2 border-gray-600 pl-2 group-hover:border-[#4cc9f0] transition-colors">${job.company}</p>
+                                
+                                <div class="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
+                                    <span class="text-[10px] text-green-400 flex items-center gap-1">
+                                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> ACTIVE 2025
+                                    </span>
+                                    <a href="${jobUrl}" target="_blank" class="bg-white text-black text-xs font-bold px-4 py-2 rounded-full hover:bg-[#4cc9f0] hover:scale-105 transition-all shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                                        APPLY NOW ↗
+                                    </a>
                                 </div>
                             </div>`
-                        ).join('');
+                        }).join('');
                         document.getElementById('jobsGrid').innerHTML = jobsHtml;
                     } else {
                         document.getElementById('jobsGrid').innerHTML = '<p class="text-gray-500 text-center col-span-2">無法取得職缺資料。</p>';
@@ -541,7 +582,7 @@
 
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);
             gradient.addColorStop(0, '#ffffff'); 
-            gradient.addColorStop(0.5, '#a0c4ff'); 
+            gradient.addColorStop(0.5, '#4cc9f0'); 
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
 
             chartInstance = new Chart(ctx, {
