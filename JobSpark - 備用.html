@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobSpark 職缺戰情室</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --chrome-light: #ffffff;
+            --chrome-mid: #e0e0e0;
+            --chrome-dark: #8c8c8c;
+            --bg-dark: #050505;
+        }
+
+        body {
+            font-family: 'Space Mono', 'Noto Sans TC', monospace;
+            background-color: var(--bg-dark);
+            color: var(--chrome-mid);
+            overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
+        }
+
+        /* 液態金屬文字效果 */
+        .text-chrome {
+            background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 40%, #999999 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0px 2px 4px rgba(255,255,255,0.2);
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        /* 背景流動 */
+        .liquid-bg {
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 60%);
+            animation: flow 15s infinite linear;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes flow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 輸入框 */
+        .input-liquid {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.1);
+        }
+        .input-liquid:focus {
+            border-color: var(--chrome-light);
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), inset 1px 1px 2px rgba(0,0,0,0.8);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 液態按鈕 */
+        .btn-mercury {
+            background: linear-gradient(135deg, #e0e0e0 0%, #ffffff 50%, #a0a0a0 51%, #e0e0e0 100%);
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2), inset 2px 2px 5px rgba(255, 255, 255, 1);
+            transition: all 0.3s;
+        }
+        .btn-mercury:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), inset 2px 2px 5px rgba(255, 255, 255, 1);
+        }
+        .btn-mercury:disabled {
+            background: #333;
+            color: #666;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* Tab */
+        .tab-liquid {
+            border: none;
+            color: #666;
+            background: transparent;
+            position: relative;
+            transition: color 0.3s;
+        }
+        .tab-liquid:hover { color: #fff; text-shadow: 0 0 5px #fff; }
+        .tab-active { color: #fff; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 25%; width: 50%; height: 2px;
+            background: #fff;
+            box-shadow: 0 0 10px #fff;
+            border-radius: 2px;
+        }
+
+        /* 玻璃面板 */
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- 背景巨型浮動文字特效 (修正版) --- */
+        .background-ghost-text {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            
+            font-family: 'Space Mono', sans-serif;
+            font-size: 13vw; /* 使用視窗寬度單位，確保巨大化 */
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            white-space: nowrap;
+            letter-spacing: -0.05em;
+            
+            /* 極簡銀色描邊風格 */
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
+            
+            /* 放置於最底層 */
+            z-index: 0;
+            pointer-events: none;
+            
+            /* 呼吸動畫 */
+            animation: giantBreathe 8s ease-in-out infinite;
+        }
+
+        @keyframes giantBreathe {
+            0%, 100% {
+                opacity: 0.5; /* 極度透明 */
+                transform: translate(-50%, -50%) scale(1);
+                filter: blur(2px);
+            }
+            50% {
+                opacity: 1; /* 稍微顯現 */
+                transform: translate(-50%, -50%) scale(1.05);
+                filter: blur(0px);
+                text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .loader {
+            border-top-color: #fff;
+            animation: spinner 0.8s linear infinite;
+        }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #666, #fff, #666); border-radius: 3px; }
+        
+        .prose strong { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        .prose h1, .prose h2, .prose h3 { background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; color: transparent; font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row">
+
+    <div class="liquid-bg"></div>
+
+    <aside class="w-full md:w-1/3 bg-black/80 p-8 flex flex-col z-20 overflow-y-auto border-r border-[#333] relative backdrop-blur-md">
+        
+        <h1 class="text-5xl mb-2 mt-4 tracking-tighter text-chrome italic">
+            JobSpark
+        </h1>
+        <p class="text-xs text-gray-400 mb-10 tracking-widest font-mono border-l-2 border-white pl-2">
+            智慧職涯戰情系統 V2.5
+        </p>
+
+        <div class="mb-8 space-y-5">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-2 h-2 rounded-full bg-white shadow-[0_0_10px_#fff]"></div>
+                <h3 class="text-sm font-bold text-white tracking-widest">系統授權 (AUTH)</h3>
+            </div>
+            <div>
+                <input type="password" id="geminiKey" placeholder="輸入 API 金鑰..." 
+                    class="w-full p-4 input-liquid text-sm font-mono tracking-wider">
+            </div>
+        </div>
+
+        <div class="space-y-6 flex-grow">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+                <h3 class="text-sm font-bold text-white tracking-widest">分析參數 (CONFIG)</h3>
+            </div>
+            
+            <div>
+                <label class="block text-xs text-gray-500 mb-2 pl-1">目標職位 (關鍵字)</label>
+                <input type="text" id="jobTitle" placeholder="例如：前端工程師, PM" 
+                    class="w-full p-4 input-liquid text-sm font-bold text-white">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-2 pl-1">使用者等級</label>
+                    <select id="userLevel" class="w-full p-4 input-liquid text-sm cursor-pointer">
+                        <option value="社會新鮮人" class="bg-black">新鮮人 (0-1年)</option>
+                        <option value="大三/大四實習" class="bg-black">實習生 (Intern)</option>
+                        <option value="1-3年經驗" class="bg-black">初階 (Junior)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-2 pl-1">分析重點</label>
+                    <select id="focusPoint" class="w-full p-4 input-liquid text-sm cursor-pointer">
+                        <option value="技能熱度" class="bg-black">技能熱度</option>
+                        <option value="薪資行情" class="bg-black">薪資區間</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="startAnalysis()" class="btn-mercury w-full py-4 mt-10 flex justify-center items-center gap-3 text-sm group shadow-lg">
+            <span id="btnSpinner" class="hidden loader ease-linear rounded-full border-2 border-t-2 border-gray-800 h-4 w-4"></span>
+            <span id="btnText">啟動全域掃描</span>
+        </button>
+        
+        <div class="mt-8 text-[10px] text-gray-600 font-mono text-center">
+            POWERED BY GEMINI 2.5 // LIQUID ENGINE<br>
+            等待訊號連接...
+        </div>
+    </aside>
+
+    <main class="w-full md:w-2/3 p-4 md:p-8 flex flex-col h-full overflow-hidden relative z-10">
+        
+        <div class="background-ghost-text">JobSpark</div>
+
+        <div id="welcomeScreen" class="flex flex-col items-center justify-center h-full text-center relative z-20"> <div class="p-12 glass-panel max-w-md border-t border-white/20">
+                <div class="text-6xl mb-6 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">◈</div>
+                <h2 class="text-2xl font-bold mb-4 text-white tracking-widest text-chrome">系統待命</h2>
+                <p class="text-gray-400 text-sm leading-relaxed font-mono">
+                    等待參數輸入。<br>
+                    AI 代理人已準備就緒。<br>
+                    請於左側面板配置掃描目標。
+                </p>
+            </div>
+        </div>
+
+        <div id="errorBox" class="hidden absolute top-6 left-1/2 transform -translate-x-1/2 bg-red-900/80 border border-red-400 text-white px-6 py-4 rounded-xl z-50 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+            <p class="font-bold text-xs uppercase mb-1 tracking-widest text-red-300">[系統錯誤] SYSTEM_FAILURE</p>
+            <p id="errorMsg" class="text-sm font-mono"></p>
+            <button onclick="document.getElementById('errorBox').classList.add('hidden')" class="absolute top-2 right-3 text-white/50 hover:text-white">✕</button>
+        </div>
+
+        <div id="resultContainer" class="hidden flex-col h-full space-y-5 max-w-6xl mx-auto w-full relative z-20">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="glass-panel p-6 flex flex-col justify-between h-36 relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
+                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest">預估月薪區間 (EST. SALARY)</h3>
+                    <div class="flex items-end gap-3 mt-2">
+                        <span class="text-4xl font-bold text-white tracking-tighter text-chrome" id="salaryRange">--</span>
+                        <span class="text-xs text-gray-400 mb-2 font-mono">TWD / Month</span>
+                    </div>
+                </div>
+                <div class="glass-panel p-6 flex flex-col justify-between h-36 relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
+                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest">最高價值技能 (TOP ASSET)</h3>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="text-3xl font-bold text-white tracking-tighter text-chrome uppercase" id="topSkill">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-8 border-b border-white/10 px-4">
+                <button onclick="switchTab('chart')" id="tab-chart" class="tab-liquid py-3 text-sm uppercase tracking-widest tab-active">技能熱度分析</button>
+                <button onclick="switchTab('strategy')" id="tab-strategy" class="tab-liquid py-3 text-sm uppercase tracking-widest">ROI 策略建議</button>
+                <button onclick="switchTab('report')" id="tab-report" class="tab-liquid py-3 text-sm uppercase tracking-widest">完整趨勢報告</button>
+            </div>
+
+            <div class="glass-panel border-t-0 rounded-t-none p-8 flex-grow overflow-y-auto custom-scrollbar relative bg-black/40">
+                <div id="content-chart" class="block h-full flex flex-col">
+                    <h4 class="font-bold text-white text-sm uppercase mb-6 flex items-center tracking-widest">
+                        <span class="w-1 h-4 bg-white mr-3 shadow-[0_0_8px_#fff]"></span> 市場技能需求 Top 5
+                    </h4>
+                    <div class="relative flex-grow w-full min-h-[300px]">
+                        <canvas id="skillChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="content-strategy" class="hidden h-full overflow-y-auto">
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="bg-white/5 p-6 rounded-xl border border-white/10">
+                            <h4 class="font-bold text-white text-sm mb-4 uppercase tracking-widest flex items-center">
+                                <span class="text-lg mr-2">💎</span> 高含金量資產 (技能)
+                            </h4>
+                            <ul id="highValueList" class="space-y-4 text-sm text-gray-300"></ul>
+                        </div>
+                        <div class="bg-white/5 p-6 rounded-xl border border-white/10">
+                            <h4 class="font-bold text-white text-sm mb-4 uppercase tracking-widest flex items-center">
+                                <span class="text-lg mr-2">🚀</span> 最佳學習路徑
+                            </h4>
+                            <div id="learningPath" class="text-gray-300 text-sm leading-7 text-justify"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-report" class="hidden h-full overflow-y-auto">
+                    <div id="aiReportText" class="prose prose-invert max-w-none text-gray-300 text-sm leading-7 whitespace-pre-wrap"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        let chartInstance = null;
+        Chart.defaults.font.family = "'Space Mono', 'Noto Sans TC', monospace";
+        Chart.defaults.color = '#888';
+        Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
+
+        function switchTab(tabName) {
+            ['chart', 'report', 'strategy'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`content-${t}`).classList.remove('block');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`content-${tabName}`).classList.add('block');
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+        }
+
+        async function fetchGeminiData(apiKey, params) {
+            const prompt = `
+            角色：專業職涯數據分析師。
+            任務：針對「${params.userLevel}」的「${params.jobTitle}」職位，進行最新台灣市場分析。
+            [步驟 1] 執行 Google Search (必須)：
+            - 找出 JD 中出現頻率最高的 5 個硬技能 (Hard Skills)。
+            - 找出該職級的平均月薪範圍 (TWD)。
+            - 識別出具備「高含金量」的加分技能。
+            [步驟 2] 輸出 JSON 格式：
+            \`\`\`json
+            {
+                "salary_range": "35K - 45K",
+                "top_skill_name": "Python",
+                "heatmap": {
+                    "labels": ["技能A", "技能B", "技能C", "技能D", "技能E"],
+                    "data": [95, 80, 70, 60, 45]
+                },
+                "high_value_skills": ["技能X: 簡短理由", "技能Y: 簡短理由"],
+                "learning_path": "給使用者的具體學習建議 (繁體中文)..."
+            }
+            \`\`\`
+            [步驟 3] 產生報告：在 JSON 之前，提供一段約 200 字的市場趨勢觀察報告 (繁體中文)。
+            `;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    tools: [{ google_search: {} }]
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.candidates && data.candidates[0].content) {
+                 return data.candidates[0].content.parts.map(part => part.text).join('');
+            } else {
+                throw new Error("API 回應遭阻擋或格式錯誤");
+            }
+        }
+
+        async function startAnalysis() {
+            const apiKey = document.getElementById('geminiKey').value.trim();
+            const jobTitle = document.getElementById('jobTitle').value.trim();
+            const userLevel = document.getElementById('userLevel').value;
+            const errorBox = document.getElementById('errorBox');
+            
+            errorBox.classList.add('hidden');
+            if (!apiKey) { alert("錯誤：請輸入 API Key"); return; }
+            if (!jobTitle) { alert("錯誤：請輸入目標職位"); return; }
+
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const btn = document.querySelector('button');
+            
+            btn.disabled = true;
+            btnText.innerText = "正在掃描市場數據...";
+            btnSpinner.classList.remove('hidden');
+            
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('resultContainer').classList.add('flex');
+            
+            // 搜尋時隱藏背景大字，避免干擾
+            document.querySelector('.background-ghost-text').style.display = 'none';
+            
+            document.getElementById('aiReportText').innerHTML = '<p class="text-center text-white mt-10 animate-pulse font-mono tracking-widest">>> 建立連線中...<br>>> 正在擷取節點數據...</p>';
+
+            try {
+                const rawText = await fetchGeminiData(apiKey, { jobTitle, userLevel });
+                const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
+                let displayText = rawText;
+                let data = null;
+
+                if (jsonMatch) {
+                    try {
+                        data = JSON.parse(jsonMatch[1]);
+                        displayText = rawText.replace(jsonMatch[0], "");
+                    } catch (e) { console.error("JSON Parse Error", e); }
+                }
+
+                document.getElementById('aiReportText').innerHTML = marked.parse(displayText);
+
+                if (data) {
+                    document.getElementById('salaryRange').innerText = data.salary_range || "N/A";
+                    document.getElementById('topSkill').innerText = data.top_skill_name || "N/A";
+
+                    if (data.heatmap) renderChart(data.heatmap.labels, data.heatmap.data);
+
+                    if (data.high_value_skills) {
+                        const listHtml = data.high_value_skills.map(item => 
+                            `<li class="flex items-start bg-black/30 p-3 rounded-lg border border-white/5"><span class="text-white mr-3 font-bold">◈</span><span>${item}</span></li>`
+                        ).join('');
+                        document.getElementById('highValueList').innerHTML = listHtml;
+                    }
+                    if (data.learning_path) document.getElementById('learningPath').innerText = data.learning_path;
+                }
+
+            } catch (err) {
+                console.error(err);
+                errorBox.classList.remove('hidden');
+                document.getElementById('errorMsg').innerText = err.message || "發生未知錯誤";
+                document.getElementById('aiReportText').innerText = "連線中斷，請檢查 API Key 或網路狀態。";
+            } finally {
+                btn.disabled = false;
+                btnText.innerText = "啟動全域掃描";
+                btnSpinner.classList.add('hidden');
+            }
+        }
+
+        function renderChart(labels, dataPoints) {
+            const ctx = document.getElementById('skillChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, '#ffffff'); 
+            gradient.addColorStop(0.5, '#a0c4ff'); 
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '需求強度指數',
+                        data: dataPoints,
+                        backgroundColor: gradient,
+                        borderColor: '#fff',
+                        borderWidth: 1,
+                        borderRadius: 4, 
+                        barPercentage: 0.6,
+                        hoverBackgroundColor: '#fff',
+                        hoverShadow: '0 0 10px #fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#888', font: { family: "'Space Mono'" } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#aaa', font: { family: "'Noto Sans TC', sans-serif" } }
+                        }
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#ccc',
+                            borderColor: '#fff',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            titleFont: { family: "'Noto Sans TC'" },
+                            bodyFont: { family: "'Space Mono'" }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
