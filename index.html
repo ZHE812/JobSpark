@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JobSpark V4.1 Ultra Stable</title>
+    <title>JobSpark | 職涯戰情室</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -54,27 +54,21 @@
             font-family: 'Space Mono', 'Noto Sans TC', monospace;
             background-color: var(--bg-body);
             color: var(--text-main);
-            overflow: hidden;
+            overflow: hidden; /* 保持整體 overflow hidden，只讓右側 main 捲動 */
             background-image: radial-gradient(circle at 50% 50%, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             transition: background 0.5s ease, color 0.5s ease;
         }
 
-        /* 液態金屬文字 */
         .text-chrome {
             background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 40%, #999999 50%, #ffffff 100%);
-            -webkit-background-clip: text;
-            color: transparent;
-            text-shadow: 0px 2px 4px rgba(255,255,255,0.2);
-            font-weight: 900;
-            letter-spacing: -1px;
+            -webkit-background-clip: text; color: transparent; text-shadow: 0px 2px 4px rgba(255,255,255,0.2);
+            font-weight: 900; letter-spacing: -1px;
         }
         [data-theme="light"] .text-chrome {
             background: linear-gradient(to bottom, #334155 0%, #475569 40%, #1e293b 100%);
-            -webkit-background-clip: text;
-            text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
+            -webkit-background-clip: text; text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* 背景動畫 */
         .liquid-bg {
             position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 60%);
@@ -82,8 +76,9 @@
         }
         @keyframes flow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* V4.3 改動：使用 fixed 定位，讓文字在捲動時保持不動 */
         .background-ghost-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: fixed; top: 50%; left: 60%; transform: translate(-50%, -50%);
             font-family: 'Space Mono', sans-serif; font-size: 13vw; font-weight: 900; font-style: italic;
             text-transform: uppercase; white-space: nowrap; letter-spacing: -0.05em;
             color: transparent; -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
@@ -95,7 +90,6 @@
             50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); filter: blur(0px); text-shadow: 0 0 30px rgba(255, 255, 255, 0.1); }
         }
 
-        /* UI 元件 */
         .input-liquid {
             background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text);
             border-radius: 8px; backdrop-filter: blur(5px); transition: all 0.3s ease;
@@ -145,7 +139,6 @@
         .job-card { background: var(--input-bg); border: 1px solid var(--panel-border); transition: all 0.3s ease; }
         .job-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-color: var(--neon-blue); }
 
-        /* Scanner */
         #scannerOverlay {
             background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
             background-image: linear-gradient(var(--neon-blue) 1px, transparent 1px), linear-gradient(90deg, var(--neon-blue) 1px, transparent 1px);
@@ -166,7 +159,6 @@
         @keyframes scanH { 0% { top: -10%; } 100% { top: 110%; } }
         @keyframes scanV { 0% { left: -10%; } 100% { left: 110%; } }
 
-        /* Dice Animation */
         @keyframes shake {
             0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); }
             50% { transform: rotate(-15deg); } 75% { transform: rotate(10deg); }
@@ -198,7 +190,7 @@
         <div class="mb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-3xl tracking-tighter text-chrome italic mb-1">JobSpark</h1>
-                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">V4.1 ULTRA STABLE</span>
+                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">職涯戰情室 V4.3</span>
             </div>
             <button onclick="toggleTheme()" class="btn-theme" title="切換背景主題">
                 <span id="themeIcon">☀</span>
@@ -231,10 +223,10 @@
             <div>
                 <label class="block text-[10px] mb-1 flex justify-between" style="color: var(--text-muted)">
                     <span>背景技能 / 簡歷摘要</span>
-                    <span class="text-xs text-[var(--neon-pink)] animate-pulse">※ 若空白則自動預估</span>
+                    <span class="text-xs text-[var(--neon-pink)]">※ 留空則從零開始分析</span>
                 </label>
                 <textarea id="userBackground" rows="6" 
-                    placeholder="請貼上你的技能... (若留空，AI 將自動以『該職級平均水準』進行模擬分析)"
+                    placeholder="請貼上你的技能... (若留空，雷達圖的「你的能力」將顯示為 0，以便檢視完全落差)"
                     class="w-full p-3 input-liquid text-xs font-mono leading-relaxed resize-none"></textarea>
             </div>
 
@@ -260,7 +252,7 @@
         </div>
     </aside>
 
-    <main class="flex-grow p-4 md:p-8 flex flex-col h-full overflow-hidden relative z-10" id="mainContent">
+    <main class="flex-grow p-4 md:p-8 flex flex-col h-full overflow-y-auto relative z-10 custom-scrollbar" id="mainContent">
         
         <div class="background-ghost-text">JobSpark</div>
 
@@ -269,13 +261,13 @@
                 <div class="text-5xl mb-4 opacity-20" style="color: var(--text-main)">◈</div>
                 <h2 class="text-xl font-bold mb-2 tracking-widest" style="color: var(--text-main)">等待指令輸入</h2>
                 <p class="text-xs font-mono" style="color: var(--text-muted)">
-                    系統待命。請輸入參數以啟動 V4.1。<br>
-                    Data Split Tech | 穩定度 100%
+                    系統待命。請輸入參數以啟動 V4.3。<br>
+                    支援無限捲動模式，閱讀更舒適。
                 </p>
             </div>
         </div>
 
-        <div id="scannerOverlay" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center">
+        <div id="scannerOverlay" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center">
             <div class="scan-line-h"></div>
             <div class="scan-line-v"></div>
             <div class="text-center relative z-10 p-4 bg-black/40 rounded-lg backdrop-blur-sm border border-[var(--neon-blue)]/30">
@@ -284,7 +276,7 @@
             </div>
         </div>
 
-        <div id="resultContainer" class="hidden flex-col h-full w-full max-w-6xl mx-auto space-y-4 relative z-30">
+        <div id="resultContainer" class="hidden flex-col w-full max-w-6xl mx-auto space-y-4 relative z-30 mb-10">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
                 <div class="glass-panel p-5 relative overflow-hidden group">
                     <div class="absolute -right-5 -top-5 w-20 h-20 bg-current opacity-5 rounded-full blur-xl"></div>
@@ -311,7 +303,7 @@
                 </div>
             </div>
 
-            <div class="flex gap-4 border-b px-2 shrink-0 overflow-x-auto" style="border-color: var(--panel-border)">
+            <div class="flex gap-4 border-b px-2 shrink-0 overflow-x-auto sticky top-0 bg-[var(--bg-body)]/80 backdrop-blur z-40 py-2" style="border-color: var(--panel-border)">
                 <button onclick="switchTab('report')" id="tab-report" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-pink)] tab-active">深度趨勢報告</button>
                 <button onclick="switchTab('resources')" id="tab-resources" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-blue)]">2025 最新資源</button>
                 <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-blue)]">最新職缺</button>
@@ -319,7 +311,7 @@
                 <button onclick="switchTab('interview')" id="tab-interview" class="tab-liquid py-3 text-xs uppercase tracking-widest">面試題庫</button>
             </div>
 
-            <div id="contentPanel" class="glass-panel border-t-0 rounded-t-none p-6 flex-grow overflow-y-auto custom-scrollbar min-h-0" style="background-color: var(--input-bg);">
+            <div id="contentPanel" class="glass-panel border-t-0 rounded-t-none p-6 min-h-[500px]" style="background-color: var(--input-bg);">
                 <div id="content-report" class="block">
                     <div class="pdf-section-title">SECTION 1: 深度趨勢報告</div>
                     <div id="fullReportText" class="prose prose-invert prose-sm max-w-none font-sans" style="color: var(--text-main)"></div>
@@ -365,8 +357,8 @@
                 </div>
             </div>
             
-            <div class="text-center text-[10px] font-mono pt-2 opacity-50" style="color: var(--text-muted)">
-                GENERATED BY JOBSPARK V4.1 // AI ARCHITECT
+            <div class="text-center text-[10px] font-mono pt-2 pb-8 opacity-50" style="color: var(--text-muted)">
+                GENERATED BY JOBSPARK V4.3 // AI ARCHITECT
             </div>
         </div>
     </main>
@@ -454,7 +446,10 @@
             【核心任務】
             1. 執行 Google Search，嚴格篩選 **2025年至2026年** 的最新趨勢資料。
             2. 尋找學習資源時，請優先搜尋 **2024下半年以後** 發布的最新課程、技術文件或 Roadmap。
-            3. 若背景為空，請自動推估雷達圖數值。
+            3. **關於雷達圖數值 (Critical)**：
+               - 若背景為 "未提供" 或空白，**請務必將 radar_chart 中的 'user_data' 全部設為 0** (代表使用者目前無相關能力，需從零開始)。
+               - 若背景有內容，則根據內容評估 'user_data'。
+               - 'market_data' 請始終根據市場標準填寫高標分數。
             4. 撰寫一份 **深度且完整** 的市場報告。
 
             【輸出格式 - 嚴格遵守】
@@ -538,7 +533,7 @@
                         backgroundColor: 'rgba(247, 37, 133, 0.2)', borderColor: '#f72585',
                         pointBackgroundColor: '#f72585', pointBorderColor: '#fff', borderWidth: 2
                     }, {
-                        label: '你的專業能力 (或平均推估)',
+                        label: '你的專業能力',
                         data: userData, fill: true,
                         backgroundColor: 'rgba(76, 201, 240, 0.2)', borderColor: '#4cc9f0',
                         pointBackgroundColor: '#4cc9f0', pointBorderColor: '#fff', borderWidth: 2
@@ -704,7 +699,7 @@
         }
 
         // ==========================================
-        //  小遊戲邏輯 (Game Logic) - V4.1 FIX
+        //  小遊戲邏輯 (Game Logic)
         // ==========================================
         let currentGameData = null;
         let currentQuestionIndex = 0;
