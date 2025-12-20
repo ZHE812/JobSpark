@@ -1,377 +1,419 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JobSpark 職缺戰情室</title>
+    <title>JobSpark V4.0 Final Stable</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --chrome-light: #ffffff;
-            --chrome-mid: #e0e0e0;
-            --chrome-dark: #8c8c8c;
-            --bg-dark: #050505;
             --neon-blue: #4cc9f0;
+            --neon-pink: #f72585;
+            --neon-purple: #7209b7;
+            --bg-body: #050505;
+            --bg-gradient-start: #1a1a1a;
+            --bg-gradient-end: #000000;
+            --text-main: #e0e0e0;
+            --text-muted: #8c8c8c;
+            --panel-bg: rgba(15, 15, 15, 0.85);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: #444;
+            --input-text: #fff;
+            --sidebar-bg: rgba(0, 0, 0, 0.9);
+            --chart-grid: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f0f4f8;
+            --bg-gradient-start: #e2e8f0;
+            --bg-gradient-end: #f8fafc;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.6);
+            --input-bg: rgba(255, 255, 255, 0.5);
+            --input-border: #cbd5e1;
+            --input-text: #0f172a;
+            --sidebar-bg: rgba(255, 255, 255, 0.9);
+            --chart-grid: rgba(0, 0, 0, 0.1);
         }
 
         body {
             font-family: 'Space Mono', 'Noto Sans TC', monospace;
-            background-color: var(--bg-dark);
-            color: var(--chrome-mid);
+            background-color: var(--bg-body);
+            color: var(--text-main);
             overflow: hidden;
-            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000000 100%);
+            background-image: radial-gradient(circle at 50% 50%, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            transition: background 0.5s ease, color 0.5s ease;
         }
 
-        /* 液態金屬文字效果 */
         .text-chrome {
             background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 40%, #999999 50%, #ffffff 100%);
-            -webkit-background-clip: text;
-            color: transparent;
-            text-shadow: 0px 2px 4px rgba(255,255,255,0.2);
-            font-weight: 900;
-            letter-spacing: -1px;
+            -webkit-background-clip: text; color: transparent; text-shadow: 0px 2px 4px rgba(255,255,255,0.2);
+            font-weight: 900; letter-spacing: -1px;
+        }
+        [data-theme="light"] .text-chrome {
+            background: linear-gradient(to bottom, #334155 0%, #475569 40%, #1e293b 100%);
+            -webkit-background-clip: text; text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* 背景流動 */
         .liquid-bg {
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 60%);
-            animation: flow 15s infinite linear;
-            pointer-events: none;
-            z-index: 0;
+            animation: flow 20s infinite linear; pointer-events: none; z-index: 0;
         }
         @keyframes flow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 輸入框 */
-        .input-liquid {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5), inset -1px -1px 2px rgba(255,255,255,0.1);
+        .background-ghost-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-family: 'Space Mono', sans-serif; font-size: 13vw; font-weight: 900; font-style: italic;
+            text-transform: uppercase; white-space: nowrap; letter-spacing: -0.05em;
+            color: transparent; -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
+            z-index: 0; pointer-events: none; animation: giantBreathe 8s ease-in-out infinite;
         }
-        .input-liquid:focus {
-            border-color: var(--chrome-light);
-            outline: none;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), inset 1px 1px 2px rgba(0,0,0,0.8);
-            background: rgba(255, 255, 255, 0.1);
+        [data-theme="light"] .background-ghost-text { -webkit-text-stroke: 2px rgba(0, 0, 0, 0.05); }
+        @keyframes giantBreathe {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); filter: blur(2px); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); filter: blur(0px); text-shadow: 0 0 30px rgba(255, 255, 255, 0.1); }
         }
 
-        /* 液態按鈕 */
+        .input-liquid {
+            background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text);
+            border-radius: 8px; backdrop-filter: blur(5px); transition: all 0.3s ease;
+        }
+        .input-liquid:focus { border-color: var(--neon-blue); outline: none; box-shadow: 0 0 10px rgba(76, 201, 240, 0.3); }
+
         .btn-mercury {
             background: linear-gradient(135deg, #e0e0e0 0%, #ffffff 50%, #a0a0a0 51%, #e0e0e0 100%);
-            color: #000;
-            border: none;
-            border-radius: 50px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2), inset 2px 2px 5px rgba(255, 255, 255, 1);
-            transition: all 0.3s;
+            color: #000; border: none; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15); transition: all 0.3s;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
         }
-        .btn-mercury:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4), inset 2px 2px 5px rgba(255, 255, 255, 1);
-        }
-        .btn-mercury:disabled {
-            background: #333;
-            color: #666;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
+        .btn-mercury:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(255, 255, 255, 0.4); }
+        .btn-mercury:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; }
 
-        /* Tab */
-        .tab-liquid {
-            border: none;
-            color: #666;
-            background: transparent;
-            position: relative;
-            transition: color 0.3s;
-            white-space: nowrap;
+        .btn-theme {
+            background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);
+            border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; cursor: pointer;
         }
-        .tab-liquid:hover { color: #fff; text-shadow: 0 0 5px #fff; }
-        .tab-active { color: #fff; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .btn-theme:hover { border-color: var(--neon-blue); color: var(--neon-blue); transform: rotate(15deg); }
+
+        .btn-pdf {
+            background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink);
+            border-radius: 4px; font-size: 0.75rem; transition: all 0.3s;
+        }
+        .btn-pdf:hover { background: var(--neon-pink); color: white; box-shadow: 0 0 15px var(--neon-pink); }
+
+        .tab-liquid { color: var(--text-muted); background: transparent; transition: color 0.3s; position: relative; white-space: nowrap; }
+        .tab-liquid:hover { color: var(--text-main); }
+        .tab-active { color: var(--neon-blue); font-weight: bold; text-shadow: 0 0 8px var(--neon-blue); }
         .tab-active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px; left: 25%; width: 50%; height: 2px;
-            background: #fff;
-            box-shadow: 0 0 10px #fff;
-            border-radius: 2px;
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px;
+            background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue);
         }
 
-        /* 玻璃面板 */
         .glass-panel {
-            background: rgba(20, 20, 20, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: var(--panel-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border); border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); transition: background 0.5s ease;
         }
-
-        /* 職缺卡片特效 */
-        .job-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-        .job-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-
-        /* 連結按鈕特效 */
-        .link-btn {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        .link-btn::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: 0.5s;
-        }
-        .link-btn:hover::after {
-            left: 100%;
-        }
-
-        /* --- 背景巨型浮動文字特效 --- */
-        .background-ghost-text {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            
-            font-family: 'Space Mono', sans-serif;
-            font-size: 13vw; 
-            font-weight: 900;
-            font-style: italic;
-            text-transform: uppercase;
-            white-space: nowrap;
-            letter-spacing: -0.05em;
-            
-            color: transparent;
-            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
-            
-            z-index: 0;
-            pointer-events: none;
-            
-            animation: giantBreathe 8s ease-in-out infinite;
-        }
-
-        @keyframes giantBreathe {
-            0%, 100% {
-                opacity: 0.5;
-                transform: translate(-50%, -50%) scale(1);
-                filter: blur(2px);
-            }
-            50% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.05);
-                filter: blur(0px);
-                text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
-            }
-        }
-
-        .loader {
-            border-top-color: #fff;
-            animation: spinner 0.8s linear infinite;
-        }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
+        .link-btn { position: relative; overflow: hidden; transition: all 0.3s; }
+        .link-btn:hover { background: rgba(255,255,255,0.1); }
+        [data-theme="light"] .link-btn:hover { background: rgba(0,0,0,0.05); }
+
+        .job-card { background: var(--input-bg); border: 1px solid var(--panel-border); transition: all 0.3s ease; }
+        .job-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-color: var(--neon-blue); }
+
+        #scannerOverlay {
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            background-image: linear-gradient(var(--neon-blue) 1px, transparent 1px), linear-gradient(90deg, var(--neon-blue) 1px, transparent 1px);
+            background-size: 40px 40px; background-position: -1px -1px;
+        }
+        [data-theme="light"] #scannerOverlay { background-color: rgba(255,255,255,0.9); }
+        
+        .scan-line-h {
+            position: absolute; left: 0; width: 100%; height: 2px;
+            background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue), 0 0 30px var(--neon-blue);
+            opacity: 0.8; animation: scanH 1.5s linear infinite;
+        }
+        .scan-line-v {
+            position: absolute; top: 0; width: 2px; height: 100%;
+            background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue), 0 0 30px var(--neon-blue);
+            opacity: 0.8; animation: scanV 2s linear infinite;
+        }
+        @keyframes scanH { 0% { top: -10%; } 100% { top: 110%; } }
+        @keyframes scanV { 0% { left: -10%; } 100% { left: 110%; } }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); } 75% { transform: rotate(10deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .dice-shake:hover span { display: inline-block; animation: shake 0.5s ease-in-out infinite; }
+
+        .prose strong { color: var(--text-main); font-weight: 700; }
+        .prose h1, .prose h2, .prose h3, .prose h4 { color: var(--neon-blue); margin-top: 1.5rem; margin-bottom: 0.8rem; font-weight: 700; line-height: 1.4; }
+        .prose p { margin-bottom: 1rem; line-height: 1.8; text-align: justify; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .prose li { margin-bottom: 0.5rem; }
+        .prose blockquote { border-left: 4px solid var(--neon-pink); padding-left: 1rem; font-style: italic; color: var(--text-muted); }
+
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #666, #fff, #666); border-radius: 3px; }
-        
-        .prose strong { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
-        .prose h1, .prose h2, .prose h3 { background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; color: transparent; font-family: 'Noto Sans TC', sans-serif; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background: var(--input-border); border-radius: 3px; }
+        .loader { border-top-color: var(--neon-blue); animation: spinner 1s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .pdf-section-title { display: none; margin-top: 20px; margin-bottom: 10px; font-size: 14px; font-weight: bold; color: var(--neon-pink); border-bottom: 1px solid var(--input-border); }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
 
     <div class="liquid-bg"></div>
 
-    <aside class="w-full md:w-1/3 bg-black/80 p-8 flex flex-col z-20 overflow-y-auto border-r border-[#333] relative backdrop-blur-md">
-        
-        <h1 class="text-5xl mb-2 mt-4 tracking-tighter text-chrome italic">
-            JobSpark
-        </h1>
-        <p class="text-xs text-gray-400 mb-10 tracking-widest font-mono border-l-2 border-white pl-2">
-            智慧職涯戰情系統 V3.1
-        </p>
-
-        <div class="mb-8 space-y-5">
-            <div class="flex items-center gap-2 mb-2">
-                <div class="w-2 h-2 rounded-full bg-white shadow-[0_0_10px_#fff]"></div>
-                <h3 class="text-sm font-bold text-white tracking-widest">系統授權 (AUTH)</h3>
-            </div>
+    <aside class="w-full md:w-[350px] p-6 flex flex-col z-30 border-r relative flex-shrink-0 overflow-y-auto" 
+           style="background-color: var(--sidebar-bg); border-color: var(--input-border);">
+        <div class="mb-6 flex justify-between items-start">
             <div>
-                <input type="password" id="geminiKey" placeholder="輸入 API 金鑰..." 
-                    class="w-full p-4 input-liquid text-sm font-mono tracking-wider">
+                <h1 class="text-3xl tracking-tighter text-chrome italic mb-1">JobSpark</h1>
+                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">V4.0 FINAL STABLE</span>
             </div>
+            <button onclick="toggleTheme()" class="btn-theme" title="切換背景主題">
+                <span id="themeIcon">☀</span>
+            </button>
         </div>
 
-        <div class="space-y-6 flex-grow">
-            <div class="flex items-center gap-2 mb-2">
-                <div class="w-2 h-2 rounded-full bg-gray-500"></div>
-                <h3 class="text-sm font-bold text-white tracking-widest">分析參數 (CONFIG)</h3>
-            </div>
-            
-            <div>
-                <label class="block text-xs text-gray-500 mb-2 pl-1">目標職位 (關鍵字)</label>
-                <input type="text" id="jobTitle" placeholder="例如：前端工程師, PM" 
-                    class="w-full p-4 input-liquid text-sm font-bold text-white">
+        <div class="space-y-5 flex-grow">
+            <div class="group">
+                <label class="block text-[10px] text-neon-blue mb-1 tracking-widest">系統授權 (API KEY)</label>
+                <input type="password" id="geminiKey" placeholder="貼上 Google Gemini Key..." 
+                    class="w-full p-3 input-liquid text-xs font-mono tracking-wider">
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-2 pl-1">使用者等級</label>
-                    <select id="userLevel" class="w-full p-4 input-liquid text-sm cursor-pointer">
-                        <option value="社會新鮮人" class="bg-black">新鮮人 (0-1年)</option>
-                        <option value="大三/大四實習" class="bg-black">實習生 (Intern)</option>
-                        <option value="1-3年經驗" class="bg-black">初階 (Junior)</option>
-                    </select>
+                    <label class="block text-[10px] mb-1" style="color: var(--text-muted)">目標職缺</label>
+                    <input type="text" id="jobTitle" placeholder="Ex: AI Engineer" value="AI Engineer"
+                        class="w-full p-3 input-liquid text-xs font-bold">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-2 pl-1">分析重點</label>
-                    <select id="focusPoint" class="w-full p-4 input-liquid text-sm cursor-pointer">
-                        <option value="技能熱度" class="bg-black">技能熱度</option>
-                        <option value="薪資行情" class="bg-black">薪資區間</option>
+                    <label class="block text-[10px] mb-1" style="color: var(--text-muted)">等級</label>
+                    <select id="userLevel" class="w-full p-3 input-liquid text-xs cursor-pointer">
+                        <option value="Junior (1-3年)" style="color:#000">Junior</option>
+                        <option value="Senior (5年以上)" style="color:#000">Senior</option>
+                        <option value="Intern/Student" style="color:#000">Intern</option>
                     </select>
                 </div>
             </div>
+
+            <div>
+                <label class="block text-[10px] mb-1 flex justify-between" style="color: var(--text-muted)">
+                    <span>背景技能 / 簡歷摘要</span>
+                    <span class="text-xs text-[var(--neon-pink)] animate-pulse">※ 若空白則自動預估</span>
+                </label>
+                <textarea id="userBackground" rows="6" 
+                    placeholder="請貼上你的技能... (若留空，AI 將自動以『該職級平均水準』進行模擬分析)"
+                    class="w-full p-3 input-liquid text-xs font-mono leading-relaxed resize-none"></textarea>
+            </div>
+
+            <button onclick="startMiniGame()" class="w-full mt-4 py-3 border border-[var(--neon-pink)] text-[var(--neon-pink)] rounded hover:bg-[var(--neon-pink)] hover:text-white transition text-xs font-bold tracking-widest uppercase flex justify-center items-center gap-2">
+                🎮 啟動職涯快問快答
+            </button>
+
+            <button onclick="rollStyleDice()" class="w-full mt-2 py-3 border border-[var(--neon-purple)] text-[var(--neon-purple)] rounded hover:bg-[var(--neon-purple)] hover:text-white transition text-xs font-bold tracking-widest uppercase flex justify-center items-center gap-2 dice-shake">
+                <span class="text-lg">🎲</span> 生成今日面試穿搭
+            </button>
+
+            <button onclick="startAnalysis()" id="analyzeBtn" class="btn-mercury w-full py-4 mt-2 flex justify-center items-center gap-2 text-xs group">
+                <span id="btnSpinner" class="hidden loader w-3 h-3 rounded-full border-2 border-gray-600"></span>
+                <span id="btnText">啟動 2025 趨勢掃描</span>
+            </button>
         </div>
 
-        <button onclick="startAnalysis()" class="btn-mercury w-full py-4 mt-10 flex justify-center items-center gap-3 text-sm group shadow-lg">
-            <span id="btnSpinner" class="hidden loader ease-linear rounded-full border-2 border-t-2 border-gray-800 h-4 w-4"></span>
-            <span id="btnText">啟動全域掃描</span>
-        </button>
-        
-        <div class="mt-8 text-[10px] text-gray-600 font-mono text-center">
-            POWERED BY GEMINI 2.5 // LIQUID ENGINE<br>
-            等待訊號連接...
+        <div class="mt-6 pt-4 border-t flex justify-between items-center" style="border-color: var(--input-border);">
+            <span class="text-[10px]" style="color: var(--text-muted)">STATUS: <span class="text-green-500">ONLINE</span></span>
+            <button onclick="exportToPDF()" id="pdfBtn" class="hidden btn-pdf px-3 py-1 flex items-center gap-1">
+                <span>⇩ FULL PDF</span>
+            </button>
         </div>
     </aside>
 
-    <main class="w-full md:w-2/3 p-4 md:p-8 flex flex-col h-full overflow-hidden relative z-10">
+    <main class="flex-grow p-4 md:p-8 flex flex-col h-full overflow-hidden relative z-10" id="mainContent">
         
         <div class="background-ghost-text">JobSpark</div>
 
-        <div id="welcomeScreen" class="flex flex-col items-center justify-center h-full text-center relative z-20"> <div class="p-12 glass-panel max-w-md border-t border-white/20">
-                <div class="text-6xl mb-6 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">◈</div>
-                <h2 class="text-2xl font-bold mb-4 text-white tracking-widest text-chrome">系統待命</h2>
-                <p class="text-gray-400 text-sm leading-relaxed font-mono">
-                    等待參數輸入。<br>
-                    AI 代理人已準備就緒。<br>
-                    請於左側面板配置掃描目標。
+        <div id="welcomeScreen" class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
+            <div class="p-10 glass-panel max-w-md text-center">
+                <div class="text-5xl mb-4 opacity-20" style="color: var(--text-main)">◈</div>
+                <h2 class="text-xl font-bold mb-2 tracking-widest" style="color: var(--text-main)">等待指令輸入</h2>
+                <p class="text-xs font-mono" style="color: var(--text-muted)">
+                    系統待命。請輸入參數以啟動 V4.0。<br>
+                    支援容錯修復與自動填補。
                 </p>
             </div>
         </div>
 
-        <div id="errorBox" class="hidden absolute top-6 left-1/2 transform -translate-x-1/2 bg-red-900/80 border border-red-400 text-white px-6 py-4 rounded-xl z-50 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.4)]">
-            <p class="font-bold text-xs uppercase mb-1 tracking-widest text-red-300">[系統錯誤] SYSTEM_FAILURE</p>
-            <p id="errorMsg" class="text-sm font-mono"></p>
-            <button onclick="document.getElementById('errorBox').classList.add('hidden')" class="absolute top-2 right-3 text-white/50 hover:text-white">✕</button>
+        <div id="scannerOverlay" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center">
+            <div class="scan-line-h"></div>
+            <div class="scan-line-v"></div>
+            <div class="text-center relative z-10 p-4 bg-black/40 rounded-lg backdrop-blur-sm border border-[var(--neon-blue)]/30">
+                <div class="text-[var(--neon-blue)] text-4xl mb-4 font-bold tracking-widest animate-pulse">XY SCANNING</div>
+                <div id="terminalLog" class="text-xs font-mono tracking-wider h-6" style="color: var(--text-main)">>> INITIALIZING PROTOCOL...</div>
+            </div>
         </div>
 
-        <div id="resultContainer" class="hidden flex-col h-full space-y-5 max-w-6xl mx-auto w-full relative z-20">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="glass-panel p-6 flex flex-col justify-between h-36 relative overflow-hidden group">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
-                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest">預估月薪區間 (EST. SALARY)</h3>
-                    <div class="flex items-end gap-3 mt-2">
-                        <span class="text-4xl font-bold text-white tracking-tighter text-chrome" id="salaryRange">--</span>
-                        <span class="text-xs text-gray-400 mb-2 font-mono">TWD / Month</span>
+        <div id="resultContainer" class="hidden flex-col h-full w-full max-w-6xl mx-auto space-y-4 relative z-30">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
+                <div class="glass-panel p-5 relative overflow-hidden group">
+                    <div class="absolute -right-5 -top-5 w-20 h-20 bg-current opacity-5 rounded-full blur-xl"></div>
+                    <h3 class="text-[10px] font-bold uppercase tracking-widest" style="color: var(--text-muted)">2025 市場月薪 (EST.)</h3>
+                    <div class="mt-2">
+                        <span class="text-2xl md:text-3xl font-bold tracking-tighter" style="color: var(--text-main)" id="salaryRange">--</span>
+                        <span class="text-xs font-mono" style="color: var(--text-muted)">TWD</span>
                     </div>
                 </div>
-                <div class="glass-panel p-6 flex flex-col justify-between h-36 relative overflow-hidden group">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
-                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest">最高價值技能 (TOP ASSET)</h3>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="text-3xl font-bold text-white tracking-tighter text-chrome uppercase" id="topSkill">--</span>
+
+                <div class="glass-panel p-5 relative overflow-hidden group border-b-2 border-b-[var(--neon-pink)]">
+                    <h3 class="text-[var(--neon-pink)] text-[10px] font-bold uppercase tracking-widest">AI 適配評分 (MATCH)</h3>
+                    <div class="mt-2 flex items-baseline gap-2">
+                        <span class="text-4xl font-bold tracking-tighter text-chrome" id="matchScore">0</span>
+                        <span class="text-sm" style="color: var(--text-muted)">/ 100</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-1 relative overflow-hidden group flex flex-col justify-center items-center" style="min-height: 250px;">
+                    <div class="absolute top-2 left-3 text-[10px] uppercase tracking-widest text-[var(--text-muted)] z-10 opacity-70">能力雷達分析</div>
+                    <div class="w-full h-full relative p-2">
+                        <canvas id="radarChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="flex gap-4 md:gap-8 border-b border-white/10 px-4 overflow-x-auto">
-                <button onclick="switchTab('chart')" id="tab-chart" class="tab-liquid py-3 text-sm uppercase tracking-widest tab-active">技能熱度</button>
-                <button onclick="switchTab('strategy')" id="tab-strategy" class="tab-liquid py-3 text-sm uppercase tracking-widest">學習策略與資源</button>
-                <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-liquid py-3 text-sm uppercase tracking-widest">最新職缺雷達 2025</button>
-                <button onclick="switchTab('report')" id="tab-report" class="tab-liquid py-3 text-sm uppercase tracking-widest">完整趨勢報告</button>
+            <div class="flex gap-4 border-b px-2 shrink-0 overflow-x-auto" style="border-color: var(--panel-border)">
+                <button onclick="switchTab('report')" id="tab-report" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-pink)] tab-active">深度趨勢報告</button>
+                <button onclick="switchTab('resources')" id="tab-resources" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-blue)]">2025 最新資源</button>
+                <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-blue)]">最新職缺</button>
+                <button onclick="switchTab('gap')" id="tab-gap" class="tab-liquid py-3 text-xs uppercase tracking-widest">適配與履歷</button>
+                <button onclick="switchTab('interview')" id="tab-interview" class="tab-liquid py-3 text-xs uppercase tracking-widest">面試題庫</button>
             </div>
 
-            <div class="glass-panel border-t-0 rounded-t-none p-4 md:p-8 flex-grow overflow-y-auto custom-scrollbar relative bg-black/40">
-                
-                <div id="content-chart" class="block h-full flex flex-col">
-                    <h4 class="font-bold text-white text-sm uppercase mb-6 flex items-center tracking-widest">
-                        <span class="w-1 h-4 bg-white mr-3 shadow-[0_0_8px_#fff]"></span> 市場技能需求 Top 5
+            <div id="contentPanel" class="glass-panel border-t-0 rounded-t-none p-6 flex-grow overflow-y-auto custom-scrollbar min-h-0" style="background-color: var(--input-bg);">
+                <div id="content-report" class="block">
+                    <div class="pdf-section-title">SECTION 1: 深度趨勢報告</div>
+                    <div id="fullReportText" class="prose prose-invert prose-sm max-w-none font-sans" style="color: var(--text-main)"></div>
+                </div>
+
+                <div id="content-resources" class="hidden h-full">
+                    <div class="pdf-section-title">SECTION 2: 2025 學習資源</div>
+                    <h4 class="font-bold text-sm mb-4 uppercase tracking-widest flex items-center" style="color: var(--text-main)">
+                        <span class="text-lg mr-2">💎</span> 2025-2026 精選學習資源 (Live Links)
                     </h4>
-                    <div class="relative flex-grow w-full min-h-[300px]">
-                        <canvas id="skillChart"></canvas>
-                    </div>
+                    <p class="text-xs mb-4" style="color: var(--text-muted)">系統已過濾並優先顯示 2024 下半年後發布之最新課程與技術文件。</p>
+                    <div id="resourceList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
 
-                <div id="content-strategy" class="hidden h-full overflow-y-auto">
-                    <div class="grid grid-cols-1 gap-6">
-                        <div class="bg-white/5 p-6 rounded-xl border border-white/10">
-                            <h4 class="font-bold text-white text-sm mb-4 uppercase tracking-widest flex items-center">
-                                <span class="text-lg mr-2">💎</span> 核心技能與學習資源推薦 (Live Links)
-                            </h4>
-                            <p class="text-xs text-gray-400 mb-4">點擊下方卡片即可前往課程或頻道：</p>
-                            <div id="resourceList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                        </div>
-                        <div class="bg-white/5 p-6 rounded-xl border border-white/10">
-                            <h4 class="font-bold text-white text-sm mb-4 uppercase tracking-widest flex items-center">
-                                <span class="text-lg mr-2">🚀</span> 最佳學習路徑
-                            </h4>
-                            <div id="learningPath" class="text-gray-300 text-sm leading-7 text-justify"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="content-jobs" class="hidden h-full overflow-y-auto">
+                <div id="content-jobs" class="hidden h-full">
+                    <div class="pdf-section-title">SECTION 3: 最新職缺掃描</div>
                     <div class="flex justify-between items-center mb-6">
-                        <h4 class="font-bold text-white text-sm uppercase flex items-center tracking-widest">
-                            <span class="w-1 h-4 bg-white mr-3 shadow-[0_0_8px_#fff]"></span> 2025 精選職缺掃描
+                        <h4 class="font-bold text-sm uppercase flex items-center tracking-widest" style="color: var(--text-main)">
+                            <span class="w-1 h-4 bg-current mr-3"></span> 2025 精選職缺掃描
                         </h4>
-                        <span class="text-[10px] text-gray-500 font-mono">SOURCE: GOOGLE SEARCH / 104 / YOURATOR</span>
                     </div>
-                    <div id="jobsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        </div>
+                    <div id="jobsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
 
-                <div id="content-report" class="hidden h-full overflow-y-auto">
-                    <div id="aiReportText" class="prose prose-invert max-w-none text-gray-300 text-sm leading-7 whitespace-pre-wrap"></div>
+                <div id="content-gap" class="hidden space-y-6">
+                    <div class="pdf-section-title">SECTION 4: 技能落差與履歷建議</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-5 rounded-lg border-l-2 border-red-500" style="background-color: var(--input-bg);">
+                            <h4 class="font-bold text-sm mb-3" style="color: var(--text-main)">⚠️ 能力缺口 (Gap Analysis)</h4>
+                            <p id="gapText" class="text-sm leading-7 text-justify" style="color: var(--text-main)"></p>
+                        </div>
+                        <div class="p-5 rounded-lg border-l-2 border-green-500" style="background-color: var(--input-bg);">
+                            <h4 class="font-bold text-sm mb-3" style="color: var(--text-main)">📝 履歷優化建議 (Resume Gen)</h4>
+                            <p id="resumeText" class="text-sm leading-7 text-justify" style="color: var(--text-main)"></p>
+                        </div>
+                    </div>
                 </div>
+
+                <div id="content-interview" class="hidden space-y-4">
+                    <div class="pdf-section-title">SECTION 5: 面試題庫</div>
+                    <h4 class="font-bold text-xs uppercase mb-2" style="color: var(--text-muted)">Targeted Interview Questions</h4>
+                    <div id="interviewList" class="space-y-4"></div>
+                </div>
+            </div>
+            
+            <div class="text-center text-[10px] font-mono pt-2 opacity-50" style="color: var(--text-muted)">
+                GENERATED BY JOBSPARK V4.0 // AI ARCHITECT
             </div>
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <div id="gameModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="glass-panel p-6 w-full max-w-lg relative border-[var(--neon-pink)] border-2">
+            <button onclick="closeGame()" class="absolute top-2 right-4 text-2xl text-[var(--text-muted)] hover:text-white">&times;</button>
+            <h3 id="gameTitle" class="text-xl font-bold text-[var(--neon-pink)] mb-4 tracking-widest text-center">LOADING GAME...</h3>
+            <div id="gameContent" class="space-y-4">
+                <div class="text-center text-[var(--text-muted)] animate-pulse">正在生成挑戰題目...</div>
+            </div>
+            <div id="gameResult" class="hidden text-center mt-4">
+                <div class="text-2xl font-bold text-[var(--neon-blue)] mb-2" id="scoreDisplay"></div>
+                <p class="text-sm text-[var(--text-main)]" id="scoreComment"></p>
+                <button onclick="closeGame()" class="mt-4 px-4 py-2 bg-[var(--neon-pink)] text-white rounded text-xs font-bold">關閉遊戲</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="styleModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="glass-panel p-6 w-full max-w-md relative border-[var(--neon-purple)] border-2 flex flex-col items-center">
+            <button onclick="closeStyle()" class="absolute top-2 right-4 text-2xl text-[var(--text-muted)] hover:text-white">&times;</button>
+            <h3 class="text-xl font-bold text-[var(--neon-purple)] mb-2 tracking-widest text-center">STYLE GENERATOR</h3>
+            <p id="styleDesc" class="text-xs text-[var(--text-muted)] mb-4 text-center font-mono">Generating outfit...</p>
+            <div class="w-full aspect-[3/4] bg-black/50 rounded-lg overflow-hidden relative flex items-center justify-center group">
+                <img id="styleImage" src="" alt="Interview Outfit" class="w-full h-full object-cover hidden transition-transform duration-700 group-hover:scale-105">
+                <div id="styleLoader" class="loader w-8 h-8 rounded-full border-4 border-gray-600"></div>
+            </div>
+            <button onclick="rollStyleDice()" class="mt-6 w-full py-3 bg-[var(--neon-purple)] text-white font-bold rounded text-xs hover:opacity-90 transition">
+                🎲 再骰一次
+            </button>
+        </div>
+    </div>
 
     <script>
-        let chartInstance = null;
-        Chart.defaults.font.family = "'Space Mono', 'Noto Sans TC', monospace";
-        Chart.defaults.color = '#888';
-        Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
+        let lastAnalysisData = null;
+        let radarChartInstance = null;
+        
+        function getChartColors() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                grid: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                text: isDark ? '#888' : '#666',
+                font: "'Space Mono', 'Noto Sans TC', monospace"
+            };
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            document.getElementById('themeIcon').innerText = next === 'dark' ? '☀' : '☾';
+            if (lastAnalysisData && lastAnalysisData.radar_chart) {
+                renderRadar(lastAnalysisData.radar_chart.labels, lastAnalysisData.radar_chart.market_data, lastAnalysisData.radar_chart.user_data);
+            }
+        }
 
         function switchTab(tabName) {
-            ['chart', 'report', 'strategy', 'jobs'].forEach(t => {
+            ['report', 'resources', 'jobs', 'gap', 'interview'].forEach(t => {
                 document.getElementById(`content-${t}`).classList.add('hidden');
                 document.getElementById(`content-${t}`).classList.remove('block');
                 document.getElementById(`tab-${t}`).classList.remove('tab-active');
@@ -381,257 +423,342 @@
             document.getElementById(`tab-${tabName}`).classList.add('tab-active');
         }
 
+        // --- V4.0 NEW: JSON Cleaner Function ---
+        function cleanJsonString(str) {
+            // 1. 去除 Markdown
+            str = str.replace(/```json/g, "").replace(/```/g, "").trim();
+            // 2. 嘗試修復非法換行 (Bad control characters)
+            // 將所有未轉義的換行符號取代為轉義的 \n
+            // 這是一個粗暴但有效的修復，避免 AI 在字串中直接換行導致 JSON 解析失敗
+            return str.replace(/(?:\r\n|\r|\n)/g, '\\n');
+        }
+
         async function fetchGeminiData(apiKey, params) {
+            const backgroundInfo = params.userBackground.trim() || "未提供 (請根據職涯等級假設一位該領域的標準求職者能力)";
+            
+            // 更強烈的 Prompt 指令：強制單行 JSON
             const prompt = `
-            角色：專業職涯數據分析師。
-            任務：針對「${params.userLevel}」的「${params.jobTitle}」職位，進行最新台灣市場分析。
+            你現在是 JobSpark V4.0 的首席職涯分析師。
+            【使用者輸入】目標職缺：${params.jobTitle}, 職涯等級：${params.userLevel}, 背景：${backgroundInfo}
             
-            [步驟 1] 執行 Google Search (必須)：
-            1. 找出 JD 中出現頻率最高的 5 個硬技能 (Hard Skills)。
-            2. 找出該職級的平均月薪範圍 (TWD)。
-            3. 搜尋針對前 3 名關鍵技能的「最新學習資源」，務必包含：
-               - 線上課程名稱 (如 Udemy, Coursera, Hahow)
-               - YouTube 頻道名稱
-               - **實際 URL 連結** (若無法取得精確連結，請找官網或相關搜尋頁面)。
-            4. 搜尋 4-6 個「2025年」最新的相關職缺 (公司名稱 + 職稱 + 地點)。
-            
-            [步驟 2] 輸出 JSON 格式 (嚴格遵守，不要使用 Markdown code block)：
-            {
-                "salary_range": "40K - 55K",
-                "top_skill_name": "React.js",
-                "heatmap": {
-                    "labels": ["React", "TypeScript", "Node.js", "AWS", "Docker"],
-                    "data": [95, 80, 70, 60, 45]
-                },
-                "learning_resources": [
-                    {
-                        "skill": "React",
-                        "type": "Course",
-                        "name": "Udemy: The Complete React Developer Course",
-                        "platform": "Udemy",
-                        "url": "https://www.udemy.com/course/react-the-complete-guide-incl-redux/"
-                    },
-                    {
-                        "skill": "TypeScript",
-                        "type": "Channel",
-                        "name": "Web Dev Simplified",
-                        "platform": "YouTube",
-                        "url": "https://www.youtube.com/c/WebDevSimplified"
-                    }
-                ],
-                "latest_jobs": [
-                    {
-                        "company": "台積電 TSMC",
-                        "title": "Front-end Engineer",
-                        "location": "Hsinchu",
-                        "url": "" 
-                    }
-                ],
-                "learning_path": "給使用者的具體學習建議 (繁體中文)..."
-            }
-            
-            [備註] 若職缺找不到直接 URL，請在 JSON 的 url 欄位留空，前端會自動產生搜尋連結。但學習資源請盡量提供 URL。
-            [步驟 3] 產生報告：在 JSON 之前，提供一段約 200 字的市場趨勢觀察報告 (繁體中文)，重點放在 2025 年的新技術變革對該職位的影響。
+            【核心任務】
+            1. 執行 Google Search，嚴格篩選 **2025年至2026年** 的最新趨勢資料。
+            2. 尋找學習資源時，請優先搜尋 **2024下半年以後** 發布的最新課程、技術文件或 Roadmap。
+            3. 若背景為空，請自動推估雷達圖數值。
+            4. 撰寫一份 **深度且完整** 的市場報告。
+
+            【格式絕對要求】
+            請輸出 **純 JSON 字串**，並將整個 JSON 壓縮為 **「單行」 (Minified / Single-line)**。
+            - **絕對禁止** 在 JSON 結構中包含實際的換行符號 (Do not use literal line breaks)。
+            - 所有文字內容的換行，請一律使用 \\n 轉義字元。
+            - 不要使用 Markdown code block。
+
+            【JSON 結構範例】
+            {"salary_range":"55K-75K","match_score":75,"radar_chart":{"labels":["A","B"],"market_data":[80,90],"user_data":[60,70]},"skill_gap_analysis":"差距...","resume_suggestion":"建議...","learning_resources":[{"skill":"React","type":"Course","name":"Name","platform":"Udemy","url":"http"}],"latest_jobs":[{"company":"Co","title":"Job","location":"Loc","url":"http"}],"interview_questions":[{"q":"Q1","a":"A1"}],"full_report_text":"### Report\\n\\nContent..."}
             `;
-
-            // 維持原樣的模型版本
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    tools: [{ google_search: {} }]
-                })
-            });
-
-            const data = await response.json();
-            
-            if (data.candidates && data.candidates[0].content) {
-                 return data.candidates[0].content.parts.map(part => part.text).join('');
-            } else {
-                console.error("API Error", data);
-                throw new Error("API 回應遭阻擋或格式錯誤，請確認 Key 是否有效");
-            }
-        }
-
-        async function startAnalysis() {
-            const apiKey = document.getElementById('geminiKey').value.trim();
-            const jobTitle = document.getElementById('jobTitle').value.trim();
-            const userLevel = document.getElementById('userLevel').value;
-            const errorBox = document.getElementById('errorBox');
-            
-            errorBox.classList.add('hidden');
-            if (!apiKey) { alert("錯誤：請輸入 API Key"); return; }
-            if (!jobTitle) { alert("錯誤：請輸入目標職位"); return; }
-
-            const btnText = document.getElementById('btnText');
-            const btnSpinner = document.getElementById('btnSpinner');
-            const btn = document.querySelector('button');
-            
-            btn.disabled = true;
-            btnText.innerText = "正在掃描市場數據...";
-            btnSpinner.classList.remove('hidden');
-            
-            document.getElementById('welcomeScreen').classList.add('hidden');
-            document.getElementById('resultContainer').classList.remove('hidden');
-            document.getElementById('resultContainer').classList.add('flex');
-            
-            document.querySelector('.background-ghost-text').style.display = 'none';
-            
-            document.getElementById('aiReportText').innerHTML = '<p class="text-center text-white mt-10 animate-pulse font-mono tracking-widest">>> 建立連線中...<br>>> 正在擷取 2025 職缺與連結節點數據...</p>';
-
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             try {
-                const rawText = await fetchGeminiData(apiKey, { jobTitle, userLevel });
-                // 嘗試更寬鬆的 JSON 匹配
-                const jsonMatch = rawText.match(/\{[\s\S]*\}/); 
-                let displayText = rawText;
-                let data = null;
-
-                if (jsonMatch) {
-                    try {
-                        // 找到最後一個完整的 JSON 物件 (避免抓到前面的說明)
-                        const possibleJson = jsonMatch[0].substring(jsonMatch[0].indexOf('{'), jsonMatch[0].lastIndexOf('}') + 1);
-                        data = JSON.parse(possibleJson);
-                        displayText = rawText.replace(possibleJson, "").replace(/```json/g, "").replace(/```/g, "");
-                    } catch (e) { console.error("JSON Parse Error", e); }
-                }
-
-                document.getElementById('aiReportText').innerHTML = marked.parse(displayText);
-
-                if (data) {
-                    document.getElementById('salaryRange').innerText = data.salary_range || "N/A";
-                    document.getElementById('topSkill').innerText = data.top_skill_name || "N/A";
-
-                    if (data.heatmap) renderChart(data.heatmap.labels, data.heatmap.data);
-
-                    // 渲染學習資源 (帶連結)
-                    if (data.learning_resources) {
-                        const listHtml = data.learning_resources.map(item => {
-                            // 若無 URL，則生成 Google 搜尋連結
-                            const safeUrl = item.url && item.url.startsWith('http') 
-                                ? item.url 
-                                : `https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + item.platform)}`;
-                            
-                            return `
-                            <a href="${safeUrl}" target="_blank" class="link-btn flex flex-col bg-black/30 p-4 rounded-lg border border-white/5 hover:bg-white/10 hover:border-white/40 transition group no-underline">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center">
-                                        <span class="text-xs font-bold text-black bg-white px-2 py-0.5 rounded mr-2 group-hover:bg-[#4cc9f0] transition-colors">${item.skill}</span>
-                                        <span class="text-[10px] text-gray-400 border border-gray-600 px-2 rounded-full uppercase">${item.type}</span>
-                                    </div>
-                                    <span class="text-white transform group-hover:translate-x-1 transition text-xs">↗</span>
-                                </div>
-                                <div class="text-chrome font-bold text-sm mb-1 line-clamp-2">${item.name}</div>
-                                <div class="text-[10px] text-gray-500 font-mono mt-auto pt-2">PLATFORM: ${item.platform}</div>
-                            </a>`;
-                        }).join('');
-                        document.getElementById('resourceList').innerHTML = listHtml;
-                    }
-                    
-                    if (data.learning_path) document.getElementById('learningPath').innerText = data.learning_path;
-
-                    // 渲染職缺卡片 (帶連結)
-                    if (data.latest_jobs) {
-                        const jobsHtml = data.latest_jobs.map(job => {
-                            // 若 AI 給出 URL 則使用，否則生成搜尋連結
-                            const jobUrl = job.url && job.url.startsWith('http') 
-                                ? job.url 
-                                : `https://www.google.com/search?q=${encodeURIComponent(job.company + ' ' + job.title + ' 職缺')}`;
-
-                            return `
-                            <div class="job-card p-5 rounded-xl flex flex-col h-full relative group">
-                                <div class="flex justify-between items-start mb-2">
-                                    <h5 class="text-white font-bold text-lg leading-tight pr-2">${job.title}</h5>
-                                    <span class="text-[10px] bg-white/10 px-2 py-1 rounded text-white whitespace-nowrap">${job.location}</span>
-                                </div>
-                                <p class="text-gray-400 text-sm font-mono mb-6 border-l-2 border-gray-600 pl-2 group-hover:border-[#4cc9f0] transition-colors">${job.company}</p>
-                                
-                                <div class="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
-                                    <span class="text-[10px] text-green-400 flex items-center gap-1">
-                                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> ACTIVE 2025
-                                    </span>
-                                    <a href="${jobUrl}" target="_blank" class="bg-white text-black text-xs font-bold px-4 py-2 rounded-full hover:bg-[#4cc9f0] hover:scale-105 transition-all shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                                        APPLY NOW ↗
-                                    </a>
-                                </div>
-                            </div>`
-                        }).join('');
-                        document.getElementById('jobsGrid').innerHTML = jobsHtml;
-                    } else {
-                        document.getElementById('jobsGrid').innerHTML = '<p class="text-gray-500 text-center col-span-2">無法取得職缺資料。</p>';
-                    }
-                }
-
-            } catch (err) {
-                console.error(err);
-                errorBox.classList.remove('hidden');
-                document.getElementById('errorMsg').innerText = err.message || "發生未知錯誤";
-                document.getElementById('aiReportText').innerText = "連線中斷，請檢查 API Key 或網路狀態。";
-            } finally {
-                btn.disabled = false;
-                btnText.innerText = "啟動全域掃描";
-                btnSpinner.classList.add('hidden');
-            }
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], tools: [{ google_search: {} }] })
+                });
+                const data = await response.json();
+                if (!data.candidates) throw new Error("API Key 無效或額度已滿");
+                
+                let rawText = data.candidates[0].content.parts[0].text;
+                
+                // 使用 V4.0 清洗函式
+                const cleanedText = cleanJsonString(rawText);
+                
+                return JSON.parse(cleanedText);
+            } catch (error) { console.error(error); throw error; }
         }
 
-        function renderChart(labels, dataPoints) {
-            const ctx = document.getElementById('skillChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
+        function renderRadar(labels, marketData, userData) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if (radarChartInstance) radarChartInstance.destroy();
+            const colors = getChartColors();
+            Chart.defaults.color = colors.text;
+            Chart.defaults.scale.grid.color = colors.grid;
+            Chart.defaults.font.family = colors.font;
 
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, '#ffffff'); 
-            gradient.addColorStop(0.5, '#4cc9f0'); 
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
-
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '需求強度指數',
-                        data: dataPoints,
-                        backgroundColor: gradient,
-                        borderColor: '#fff',
-                        borderWidth: 1,
-                        borderRadius: 4, 
-                        barPercentage: 0.6,
-                        hoverBackgroundColor: '#fff',
-                        hoverShadow: '0 0 10px #fff'
+                        label: '產業需要能力 (市場高標)',
+                        data: marketData, fill: true,
+                        backgroundColor: 'rgba(247, 37, 133, 0.2)', borderColor: '#f72585',
+                        pointBackgroundColor: '#f72585', pointBorderColor: '#fff', borderWidth: 2
+                    }, {
+                        label: '你的專業能力 (或平均推估)',
+                        data: userData, fill: true,
+                        backgroundColor: 'rgba(76, 201, 240, 0.2)', borderColor: '#4cc9f0',
+                        pointBackgroundColor: '#4cc9f0', pointBorderColor: '#fff', borderWidth: 2
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
-                            max: 100,
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                            ticks: { color: '#888', font: { family: "'Space Mono'" } }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#aaa', font: { family: "'Noto Sans TC', sans-serif" } }
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: colors.grid }, grid: { color: colors.grid },
+                            pointLabels: { color: colors.text, font: { size: 10, family: "'Noto Sans TC'" } },
+                            ticks: { display: false, backdropColor: 'transparent' }, suggestedMin: 0, suggestedMax: 100
                         }
                     },
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#ccc',
-                            borderColor: '#fff',
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: false,
-                            titleFont: { family: "'Noto Sans TC'" },
-                            bodyFont: { family: "'Space Mono'" }
-                        }
-                    }
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } }
                 }
             });
+        }
+
+        const scanLogs = [">> CONNECTING 2025 NODE...", ">> FILTERING OUTDATED DATA...", ">> ANALYZING FUTURE TRENDS...", ">> FETCHING LATEST RESOURCES...", ">> COMPILING DEEP REPORT..."];
+        async function startAnalysis() {
+             const apiKey = document.getElementById('geminiKey').value.trim();
+            const jobTitle = document.getElementById('jobTitle').value;
+            const userLevel = document.getElementById('userLevel').value;
+            const userBackground = document.getElementById('userBackground').value;
+            
+            if (!apiKey) { alert("請輸入 API Key！"); return; }
+
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('btnSpinner').classList.remove('hidden');
+            document.getElementById('btnText').innerText = "2025 趨勢掃描中...";
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.querySelector('.background-ghost-text').style.display = 'none';
+            document.getElementById('resultContainer').classList.add('hidden');
+            
+            const scanner = document.getElementById('scannerOverlay');
+            const logText = document.getElementById('terminalLog');
+            scanner.classList.remove('hidden');
+            let logIndex = 0;
+            const logInterval = setInterval(() => { logText.innerText = scanLogs[logIndex++ % scanLogs.length]; }, 1000);
+
+            try {
+                const data = await fetchGeminiData(apiKey, { jobTitle, userLevel, userBackground });
+                lastAnalysisData = data;
+
+                document.getElementById('salaryRange').innerText = data.salary_range;
+                document.getElementById('matchScore').innerText = data.match_score;
+                renderRadar(data.radar_chart.labels, data.radar_chart.market_data, data.radar_chart.user_data);
+                document.getElementById('gapText').innerText = data.skill_gap_analysis;
+                document.getElementById('resumeText').innerText = data.resume_suggestion;
+
+                // Resources
+                if (data.learning_resources) {
+                    document.getElementById('resourceList').innerHTML = data.learning_resources.map(item => {
+                        const safeUrl = item.url && item.url.startsWith('http') ? item.url : `https://www.google.com/search?q=${encodeURIComponent(item.name)}`;
+                        return `<a href="${safeUrl}" target="_blank" class="link-btn flex flex-col p-4 rounded-lg border hover:bg-white/10 transition group no-underline" style="background-color: var(--input-bg); border-color: var(--panel-border);">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-black bg-white px-2 py-0.5 rounded mr-2">${item.skill}</span>
+                                <span class="text-[10px] border px-2 rounded-full" style="color: var(--text-muted); border-color: var(--text-muted)">${item.type}</span>
+                            </div>
+                            <div class="font-bold text-sm mb-1 line-clamp-2" style="color: var(--text-main)">${item.name}</div>
+                            <div class="text-[10px] font-mono mt-auto pt-2" style="color: var(--text-muted)">PLATFORM: ${item.platform}</div>
+                        </a>`;
+                    }).join('');
+                }
+
+                // Jobs
+                if (data.latest_jobs) {
+                    document.getElementById('jobsGrid').innerHTML = data.latest_jobs.map(job => {
+                        const jobUrl = job.url && job.url.startsWith('http') ? job.url : `https://www.google.com/search?q=${encodeURIComponent(job.company + ' ' + job.title)}`;
+                        return `<div class="job-card p-5 rounded-xl flex flex-col h-full relative group">
+                            <div class="flex justify-between items-start mb-2">
+                                <h5 class="font-bold text-lg leading-tight pr-2" style="color: var(--text-main)">${job.title}</h5>
+                                <span class="text-[10px] px-2 py-1 rounded whitespace-nowrap" style="background-color: var(--panel-border); color: var(--text-main)">${job.location}</span>
+                            </div>
+                            <p class="text-sm font-mono mb-6 border-l-2 pl-2" style="color: var(--text-muted); border-color: var(--text-muted)">${job.company}</p>
+                            <div class="mt-auto pt-4 border-t flex justify-between items-center" style="border-color: var(--panel-border)">
+                                <span class="text-[10px] text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> ACTIVE 2025</span>
+                                <a href="${jobUrl}" target="_blank" class="bg-white text-black text-xs font-bold px-4 py-2 rounded-full hover:bg-[#4cc9f0] hover:scale-105 transition-all">APPLY ↗</a>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+                // Interview
+                document.getElementById('interviewList').innerHTML = data.interview_questions.map((item, i) => `
+                    <div class="p-4 rounded border transition" style="background-color: var(--input-bg); border-color: var(--panel-border);">
+                        <div class="flex items-start gap-3">
+                            <span class="text-[var(--neon-blue)] font-bold font-mono">Q${i+1}</span>
+                            <div><h5 class="text-sm font-bold mb-2" style="color: var(--text-main)">${item.q}</h5><p class="text-xs font-mono border-l pl-2" style="color: var(--text-muted); border-color: var(--text-muted)">💡 ${item.a}</p></div>
+                        </div>
+                    </div>`).join('');
+
+                document.getElementById('fullReportText').innerHTML = marked.parse(data.full_report_text);
+                
+                document.getElementById('resultContainer').classList.remove('hidden');
+                document.getElementById('resultContainer').classList.add('flex');
+                document.getElementById('pdfBtn').classList.remove('hidden');
+                
+                switchTab('report');
+
+            } catch (err) {
+                alert("分析失敗：資料格式異常 (" + err.message + ")，請重試。\n(AI 生成內容具有隨機性，通常重試即可解決)"); 
+                console.error(err);
+                document.querySelector('.background-ghost-text').style.display = 'block';
+            } finally {
+                clearInterval(logInterval); scanner.classList.add('hidden');
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('btnSpinner').classList.add('hidden');
+                document.getElementById('btnText').innerText = "重新掃描";
+            }
+        }
+        function exportToPDF() {
+            const element = document.getElementById('resultContainer');
+            const contentPanel = document.getElementById('contentPanel');
+            const sections = ['content-report', 'content-resources', 'content-jobs', 'content-gap', 'content-interview'];
+            const titles = document.querySelectorAll('.pdf-section-title');
+            
+            const originalOverflow = contentPanel.style.overflow;
+            const originalHeight = contentPanel.style.height;
+            const originalTabState = {};
+
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    originalTabState[id] = el.classList.contains('hidden');
+                    el.classList.remove('hidden');
+                    el.classList.add('block');
+                    el.style.marginBottom = "40px";
+                }
+            });
+            titles.forEach(t => t.style.display = 'block');
+
+            contentPanel.style.overflow = "visible";
+            contentPanel.style.height = "auto";
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const opt = {
+                margin: 0.3,
+                filename: 'JobSpark_Full_Report_2025.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: isDark ? '#050505' : '#f0f4f8', useCORS: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                sections.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        if (originalTabState[id]) {
+                            el.classList.add('hidden');
+                            el.classList.remove('block');
+                        }
+                        el.style.marginBottom = "";
+                    }
+                });
+                titles.forEach(t => t.style.display = 'none');
+                contentPanel.style.overflow = originalOverflow;
+                contentPanel.style.height = originalHeight;
+                switchTab('report');
+            });
+        }
+
+        // ==========================================
+        //  小遊戲邏輯 (Game Logic)
+        // ==========================================
+        let currentGameData = null;
+        let currentQuestionIndex = 0;
+        let userScore = 0;
+
+        async function startMiniGame() {
+            const apiKey = document.getElementById('geminiKey').value.trim();
+            const jobTitle = document.getElementById('jobTitle').value;
+            if (!apiKey) { alert("請先輸入 API Key 才能啟動遊戲！"); return; }
+            document.getElementById('gameModal').classList.remove('hidden');
+            document.getElementById('gameContent').innerHTML = '<div class="text-center text-[var(--text-muted)] animate-pulse">正在生成挑戰題目...</div>';
+            document.getElementById('gameResult').classList.add('hidden');
+            document.getElementById('gameTitle').innerText = "LOADING GAME...";
+            
+            // V4.0 Fix: 同樣對小遊戲 JSON 進行清洗
+            const prompt = `你是一個面試官的小遊戲主持人。職缺：${jobTitle}。請生成3題情境快問快答。格式：純JSON字串(Single-line, no markdown){"title":"標題","questions":[{"id":1,"q":"題目?","options":["A.1","B.2","C.3"],"answer":"A","explanation":"解析"}],"result_comment":"評語"}`;
+            
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const data = await response.json();
+                let rawText = data.candidates[0].content.parts[0].text;
+                // 使用 V4.0 清洗
+                let cleanedText = cleanJsonString(rawText);
+                currentGameData = JSON.parse(cleanedText);
+                currentQuestionIndex = 0; userScore = 0;
+                renderQuestion();
+            } catch (e) { console.error(e); document.getElementById('gameContent').innerHTML = '<div class="text-red-500 text-center">生成失敗</div>'; }
+        }
+
+        function renderQuestion() {
+            if (!currentGameData) return;
+            const q = currentGameData.questions[currentQuestionIndex];
+            document.getElementById('gameTitle').innerText = currentGameData.title;
+            let html = `<div class="mb-2 text-xs text-[var(--neon-blue)]">QUESTION ${currentQuestionIndex + 1} / 3</div><h4 class="text-lg font-bold mb-4 text-[var(--text-main)]">${q.q}</h4><div class="space-y-2">`;
+            q.options.forEach(opt => { const code = opt.charAt(0); html += `<button onclick="checkAnswer('${code}')" class="w-full text-left p-3 rounded border border-[var(--input-border)] hover:bg-[var(--neon-blue)] hover:text-black transition text-sm text-[var(--text-muted)] hover:font-bold">${opt}</button>`; });
+            html += `</div>`;
+            document.getElementById('gameContent').innerHTML = html;
+        }
+
+        function checkAnswer(code) {
+            const q = currentGameData.questions[currentQuestionIndex];
+            const isCorrect = code === q.answer;
+            if (isCorrect) userScore++;
+            const color = isCorrect ? "text-green-500" : "text-red-500";
+            document.getElementById('gameContent').innerHTML = `<div class="text-center mb-4"><h4 class="${color} text-xl font-bold mb-2">${isCorrect ? "CORRECT! 🎉" : "WRONG 💥"}</h4><p class="text-sm text-[var(--text-main)]">正解：${q.answer}</p><p class="text-xs text-[var(--text-muted)] mt-2 border-t border-[var(--input-border)] pt-2">${q.explanation}</p></div><button onclick="nextQuestion()" class="w-full py-3 bg-[var(--neon-blue)] text-black font-bold rounded">NEXT ➡</button>`;
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentGameData.questions.length) renderQuestion(); else showGameResult();
+        }
+
+        function showGameResult() {
+            document.getElementById('gameContent').classList.add('hidden');
+            document.getElementById('gameResult').classList.remove('hidden');
+            document.getElementById('scoreDisplay').innerText = `SCORE: ${userScore} / 3`;
+            document.getElementById('scoreComment').innerText = currentGameData.result_comment;
+        }
+
+        function closeGame() {
+            document.getElementById('gameModal').classList.add('hidden');
+            document.getElementById('gameContent').classList.remove('hidden');
+            document.getElementById('gameResult').classList.add('hidden');
+        }
+
+        // ==========================================
+        //  穿搭骰子邏輯
+        // ==========================================
+        const styleVibes = ["Smart Casual", "Business Professional", "Creative Modern", "Tech Startup Hoodie Chic", "Minimalist Elegant", "Classic Formal"];
+
+        function rollStyleDice() {
+            const jobTitle = document.getElementById('jobTitle').value || "Professional";
+            const randomVibe = styleVibes[Math.floor(Math.random() * styleVibes.length)];
+            document.getElementById('styleModal').classList.remove('hidden');
+            document.getElementById('styleLoader').classList.remove('hidden');
+            document.getElementById('styleImage').classList.add('hidden');
+            document.getElementById('styleDesc').innerText = `Generating: ${randomVibe} for ${jobTitle}...`;
+
+            const randomSeed = Math.floor(Math.random() * 99999);
+            const prompt = `full body photo of a person wearing ${randomVibe} interview outfit for a ${jobTitle} position, neutral background, photorealistic, cinematic lighting, 8k, fashion photography`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=1200&model=flux&nologo=true&seed=${randomSeed}`;
+
+            const img = document.getElementById('styleImage');
+            img.onload = function() {
+                document.getElementById('styleLoader').classList.add('hidden');
+                img.classList.remove('hidden');
+                document.getElementById('styleDesc').innerText = `✨ Style: ${randomVibe}`;
+            };
+            img.onerror = function() {
+                document.getElementById('styleLoader').classList.add('hidden');
+                document.getElementById('styleDesc').innerText = "❌ 生成失敗，請再試一次";
+            };
+            img.src = imageUrl;
+        }
+
+        function closeStyle() {
+            document.getElementById('styleModal').classList.add('hidden');
         }
     </script>
 </body>
