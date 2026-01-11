@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW" data-theme="dark">
 <head>
@@ -76,7 +77,6 @@
         }
         @keyframes flow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* V4.3 改動：使用 fixed 定位，讓文字在捲動時保持不動 */
         .background-ghost-text {
             position: fixed; top: 50%; left: 60%; transform: translate(-50%, -50%);
             font-family: 'Space Mono', sans-serif; font-size: 13vw; font-weight: 900; font-style: italic;
@@ -190,7 +190,7 @@
         <div class="mb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-3xl tracking-tighter text-chrome italic mb-1">JobSpark</h1>
-                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">職涯戰情室 V4.3</span>
+                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">職涯戰情室 V4.6</span>
             </div>
             <button onclick="toggleTheme()" class="btn-theme" title="切換背景主題">
                 <span id="themeIcon">☀</span>
@@ -261,7 +261,7 @@
                 <div class="text-5xl mb-4 opacity-20" style="color: var(--text-main)">◈</div>
                 <h2 class="text-xl font-bold mb-2 tracking-widest" style="color: var(--text-main)">等待指令輸入</h2>
                 <p class="text-xs font-mono" style="color: var(--text-muted)">
-                    系統待命。請輸入參數以啟動 V4.3。<br>
+                    系統待命。請輸入參數以啟動 V4.6。<br>
                     支援無限捲動模式，閱讀更舒適。
                 </p>
             </div>
@@ -278,29 +278,42 @@
 
         <div id="resultContainer" class="hidden flex-col w-full max-w-6xl mx-auto space-y-4 relative z-30 mb-10">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
-                <div class="glass-panel p-5 relative overflow-hidden group">
-                    <div class="absolute -right-5 -top-5 w-20 h-20 bg-current opacity-5 rounded-full blur-xl"></div>
-                    <h3 class="text-[10px] font-bold uppercase tracking-widest" style="color: var(--text-muted)">2025 市場月薪 (EST.)</h3>
-                    <div class="mt-2">
-                        <span class="text-2xl md:text-3xl font-bold tracking-tighter" style="color: var(--text-main)" id="salaryRange">--</span>
-                        <span class="text-xs font-mono" style="color: var(--text-muted)">TWD</span>
+                
+                <div class="glass-panel p-5 relative overflow-hidden group flex flex-col justify-between col-span-1">
+                    <div class="absolute -right-5 -top-5 w-32 h-32 bg-current opacity-5 rounded-full blur-xl"></div>
+                    
+                    <div class="mb-4 relative z-10">
+                        <h3 class="text-[10px] font-bold uppercase tracking-widest" style="color: var(--text-muted)">2025 市場月薪 (EST.)</h3>
+                        <div class="mt-2">
+                            <span class="text-2xl font-bold tracking-tighter" style="color: var(--text-main)" id="salaryRange">--</span>
+                            <span class="text-xs font-mono block mt-1" style="color: var(--text-muted)">TWD / MONTH</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full h-px my-2 relative overflow-hidden" style="background-color: var(--panel-border)">
+                        <div class="absolute inset-0 bg-[var(--neon-pink)] opacity-50 w-1/2 animate-[scanH_2s_infinite]"></div>
+                    </div>
+
+                    <div class="mt-2 relative z-10">
+                        <h3 class="text-[var(--neon-pink)] text-[10px] font-bold uppercase tracking-widest">AI 適配評分 (MATCH)</h3>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span class="text-6xl font-bold tracking-tighter" style="color: var(--text-main)" id="matchScore">0</span>
+                            <span class="text-sm font-mono" style="color: var(--text-muted)">/ 100</span>
+                        </div>
+                        <div class="mt-2 text-[10px] opacity-60 font-mono" style="color: var(--text-muted)">Based on skill gap analysis</div>
                     </div>
                 </div>
 
-                <div class="glass-panel p-5 relative overflow-hidden group border-b-2 border-b-[var(--neon-pink)]">
-                    <h3 class="text-[var(--neon-pink)] text-[10px] font-bold uppercase tracking-widest">AI 適配評分 (MATCH)</h3>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-4xl font-bold tracking-tighter text-chrome" id="matchScore">0</span>
-                        <span class="text-sm" style="color: var(--text-muted)">/ 100</span>
+                <div class="glass-panel p-1 relative overflow-hidden group flex flex-col justify-center items-center col-span-2" style="min-height: 280px;">
+                    <div class="absolute top-3 left-4 flex items-center gap-2 z-10">
+                        <span class="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">雙軸能力雷達分析</span>
+                        <div class="h-px w-10 bg-[var(--panel-border)]"></div>
                     </div>
-                </div>
-
-                <div class="glass-panel p-1 relative overflow-hidden group flex flex-col justify-center items-center" style="min-height: 250px;">
-                    <div class="absolute top-2 left-3 text-[10px] uppercase tracking-widest text-[var(--text-muted)] z-10 opacity-70">能力雷達分析</div>
                     <div class="w-full h-full relative p-2">
                         <canvas id="radarChart"></canvas>
                     </div>
                 </div>
+
             </div>
 
             <div class="flex gap-4 border-b px-2 shrink-0 overflow-x-auto sticky top-0 bg-[var(--bg-body)]/80 backdrop-blur z-40 py-2" style="border-color: var(--panel-border)">
@@ -358,7 +371,7 @@
             </div>
             
             <div class="text-center text-[10px] font-mono pt-2 pb-8 opacity-50" style="color: var(--text-muted)">
-                GENERATED BY JOBSPARK V4.3 // AI ARCHITECT
+                GENERATED BY JOBSPARK V4.6 // AI ARCHITECT
             </div>
         </div>
     </main>
@@ -540,11 +553,19 @@
                     }]
                 },
                 options: {
+                    // 【修正關鍵】：增加圖表內距，防止 PDF 輸出時文字標籤被切到
+                    layout: {
+                        padding: 20 
+                    },
                     responsive: true, maintainAspectRatio: false,
                     scales: {
                         r: {
                             angleLines: { color: colors.grid }, grid: { color: colors.grid },
-                            pointLabels: { color: colors.text, font: { size: 10, family: "'Noto Sans TC'" } },
+                            pointLabels: { 
+                                color: colors.text, 
+                                font: { size: 11, family: "'Noto Sans TC'" },
+                                padding: 10 
+                            },
                             ticks: { display: false, backdropColor: 'transparent' }, suggestedMin: 0, suggestedMax: 100
                         }
                     },
@@ -647,54 +668,111 @@
             }
         }
         function exportToPDF() {
+            // 1. 鎖定要輸出的元素
             const element = document.getElementById('resultContainer');
             const contentPanel = document.getElementById('contentPanel');
-            const sections = ['content-report', 'content-resources', 'content-jobs', 'content-gap', 'content-interview'];
             const titles = document.querySelectorAll('.pdf-section-title');
             
-            const originalOverflow = contentPanel.style.overflow;
-            const originalHeight = contentPanel.style.height;
-            const originalTabState = {};
+            // 2. 暫存原本的 Style (為了之後復原)
+            const originalBodyStyle = document.body.style.cssText;
+            const originalElementStyle = element.getAttribute('style') || '';
+            const originalPanelStyle = contentPanel.getAttribute('style') || '';
+            
+            // 3. 【關鍵修正】強制展開所有內容，拿掉捲軸限制
+            // 讓內容可以自然撐開，這樣 PDF 分頁才會正常
+            document.body.style.height = 'auto';
+            document.body.style.overflow = 'visible';
+            
+            element.style.width = '100%';
+            element.style.maxWidth = '100%';
+            element.style.height = 'auto';
+            element.style.overflow = 'visible';
+            element.style.background = '#ffffff'; // 強制白底
+            element.style.color = '#000000';      // 強制黑字
+            element.style.padding = '20px';
+            
+            // 修正半透明面板，改為純白背景，去除陰影以免截圖模糊
+            contentPanel.style.background = '#ffffff';
+            contentPanel.style.boxShadow = 'none';
+            contentPanel.style.border = '1px solid #ddd';
+            contentPanel.style.color = '#000000';
+            contentPanel.style.height = 'auto';
+            contentPanel.style.overflow = 'visible';
 
+            // 4. 把所有隱藏的 Tab 內容都打開，這樣 PDF 才有完整報告
+            const sections = ['content-report', 'content-resources', 'content-jobs', 'content-gap', 'content-interview'];
+            const originalTabState = {};
             sections.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
                     originalTabState[id] = el.classList.contains('hidden');
                     el.classList.remove('hidden');
                     el.classList.add('block');
-                    el.style.marginBottom = "40px";
+                    el.style.marginBottom = "30px"; // 增加段落間距
+                    
+                    // 強制修正內部文字顏色
+                    const allText = el.querySelectorAll('*');
+                    allText.forEach(node => {
+                        node.style.color = '#000000';
+                        if(node.tagName === 'A') node.style.color = 'blue'; // 連結保持藍色
+                    });
                 }
             });
-            titles.forEach(t => t.style.display = 'block');
 
-            contentPanel.style.overflow = "visible";
-            contentPanel.style.height = "auto";
+            // 顯示 PDF 專用標題
+            titles.forEach(t => {
+                t.style.display = 'block';
+                t.style.color = '#f72585'; // 保持標題顏色
+                t.style.borderBottom = '2px solid #eee';
+            });
 
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            // 5. 設定 html2pdf 參數
             const opt = {
-                margin: 0.3,
-                filename: 'JobSpark_Full_Report_2025.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, backgroundColor: isDark ? '#050505' : '#f0f4f8', useCORS: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                margin:       0.3, // [調整] 稍微縮小邊距，讓圖表有更多空間
+                filename:     'JobSpark_Full_Report.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, // 提高解析度
+                    useCORS: true, // 允許跨域圖片
+                    backgroundColor: '#ffffff', // 畫布背景全白
+                    scrollY: 0 // 重置捲動位置
+                },
+                jsPDF:        { unit: 'in', format: 'a3', orientation: 'portrait' },
+                // 自動分頁設定：避免切斷文字或圖表
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
+            // 6. 生成並下載，完成後復原樣式
             html2pdf().set(opt).from(element).save().then(() => {
+                // --- 復原工作 ---
+                document.body.style.cssText = originalBodyStyle;
+                element.setAttribute('style', originalElementStyle);
+                contentPanel.setAttribute('style', originalPanelStyle);
+                
                 sections.forEach(id => {
                     const el = document.getElementById(id);
                     if(el) {
+                        // 復原顯示狀態
                         if (originalTabState[id]) {
                             el.classList.add('hidden');
                             el.classList.remove('block');
+                        } else {
+                            el.classList.add('block');
+                            el.classList.remove('hidden');
                         }
                         el.style.marginBottom = "";
+                        // 移除強制顏色 (讓 CSS 類別接手)
+                        const allText = el.querySelectorAll('*');
+                        allText.forEach(node => node.style.color = '');
                     }
                 });
+                
                 titles.forEach(t => t.style.display = 'none');
-                contentPanel.style.overflow = originalOverflow;
-                contentPanel.style.height = originalHeight;
+                
+                // 確保切回原本的 Tab
                 switchTab('report');
+                
+                alert("報告下載完成！");
             });
         }
 
