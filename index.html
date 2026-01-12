@@ -1,16 +1,15 @@
-
 <!DOCTYPE html>
-<html lang="zh-TW" data-theme="dark">
+<html lang="zh-TW" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JobSpark | 職涯戰情室</title>
+    <title>JobSpark | 職涯戰情室 V5.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
     <style>
@@ -19,8 +18,11 @@
             --neon-blue: #4cc9f0;
             --neon-pink: #f72585;
             --neon-purple: #7209b7;
+            --coursera-blue: #0056D2;
+            --udemy-purple: #A435F0;
+            --yt-red: #FF0000;
             
-            /* Dark Mode */
+            /* Dark Mode Variables (Default base, overridden by light theme below) */
             --bg-body: #050505;
             --bg-gradient-start: #1a1a1a;
             --bg-gradient-end: #000000;
@@ -30,34 +32,97 @@
             --panel-border: rgba(255, 255, 255, 0.1);
             --input-bg: rgba(255, 255, 255, 0.05);
             --input-border: #444;
-            --input-text: #fff;
-            --sidebar-bg: rgba(0, 0, 0, 0.9);
-            --chart-grid: rgba(255, 255, 255, 0.1);
+            --sidebar-bg: rgba(10, 10, 10, 0.95);
         }
 
-        /* Light Mode */
+        /* Light Mode Overrides */
         [data-theme="light"] {
             --bg-body: #f0f4f8;
             --bg-gradient-start: #e2e8f0;
             --bg-gradient-end: #f8fafc;
             --text-main: #334155;
             --text-muted: #64748b;
-            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-bg: rgba(255, 255, 255, 0.85);
             --panel-border: rgba(255, 255, 255, 0.6);
-            --input-bg: rgba(255, 255, 255, 0.5);
+            --input-bg: rgba(255, 255, 255, 0.6);
             --input-border: #cbd5e1;
-            --input-text: #0f172a;
-            --sidebar-bg: rgba(255, 255, 255, 0.9);
-            --chart-grid: rgba(0, 0, 0, 0.1);
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
         }
 
         body {
             font-family: 'Space Mono', 'Noto Sans TC', monospace;
             background-color: var(--bg-body);
             color: var(--text-main);
-            overflow: hidden; /* 保持整體 overflow hidden，只讓右側 main 捲動 */
+            overflow: hidden;
             background-image: radial-gradient(circle at 50% 50%, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        /* 側邊欄動畫 */
+        #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        }
+        
+        .sidebar-closed #sidebar {
+            transform: translateX(-100%);
+        }
+        
+        .sidebar-open #sidebar {
+            transform: translateX(0);
+            box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+        }
+
+        /* 主內容區域動畫 */
+        #mainContent {
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Desktop Layout Logic */
+        @media (min-width: 768px) {
+            .sidebar-open #mainContent { margin-left: 350px; }
+            .sidebar-closed #mainContent { margin-left: 0; }
+        }
+        
+        /* Mobile Layout Logic */
+        @media (max-width: 767px) {
+            #mainContent { margin-left: 0 !important; }
+        }
+
+        /* 背景呼吸字體跟隨動畫 */
+        .background-ghost-text {
+            position: fixed;
+            top: 50%;
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            font-family: 'Space Mono', sans-serif;
+            font-size: 13vw;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            white-space: nowrap;
+            letter-spacing: -0.05em;
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
+            z-index: 0;
+            pointer-events: none;
+            animation: giantBreathe 8s ease-in-out infinite;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="light"] .background-ghost-text { -webkit-text-stroke: 2px rgba(0, 0, 0, 0.05); }
+
+        @media (min-width: 768px) {
+            .sidebar-open .background-ghost-text {
+                left: calc(50% + 175px); 
+            }
+            .sidebar-closed .background-ghost-text {
+                left: 50%;
+            }
+        }
+
+        @keyframes giantBreathe {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); filter: blur(2px); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); filter: blur(0px); text-shadow: 0 0 30px rgba(255, 255, 255, 0.1); }
         }
 
         .text-chrome {
@@ -77,21 +142,8 @@
         }
         @keyframes flow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .background-ghost-text {
-            position: fixed; top: 50%; left: 60%; transform: translate(-50%, -50%);
-            font-family: 'Space Mono', sans-serif; font-size: 13vw; font-weight: 900; font-style: italic;
-            text-transform: uppercase; white-space: nowrap; letter-spacing: -0.05em;
-            color: transparent; -webkit-text-stroke: 2px rgba(255, 255, 255, 0.15);
-            z-index: 0; pointer-events: none; animation: giantBreathe 8s ease-in-out infinite;
-        }
-        [data-theme="light"] .background-ghost-text { -webkit-text-stroke: 2px rgba(0, 0, 0, 0.05); }
-        @keyframes giantBreathe {
-            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); filter: blur(2px); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); filter: blur(0px); text-shadow: 0 0 30px rgba(255, 255, 255, 0.1); }
-        }
-
         .input-liquid {
-            background: var(--input-bg); border: 1px solid var(--input-border); color: var(--input-text);
+            background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-main);
             border-radius: 8px; backdrop-filter: blur(5px); transition: all 0.3s ease;
         }
         .input-liquid:focus { border-color: var(--neon-blue); outline: none; box-shadow: 0 0 10px rgba(76, 201, 240, 0.3); }
@@ -105,12 +157,13 @@
         .btn-mercury:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(255, 255, 255, 0.4); }
         .btn-mercury:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; }
 
-        .btn-theme {
-            background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted);
-            border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s; cursor: pointer;
+        .btn-icon {
+            background: transparent; border: none; color: var(--text-main);
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
         }
-        .btn-theme:hover { border-color: var(--neon-blue); color: var(--neon-blue); transform: rotate(15deg); }
+        .btn-icon:hover { color: var(--neon-blue); transform: scale(1.1); }
 
         .btn-pdf {
             background: transparent; border: 1px solid var(--neon-pink); color: var(--neon-pink);
@@ -132,8 +185,8 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.2); transition: background 0.5s ease;
         }
         
-        .link-btn { position: relative; overflow: hidden; transition: all 0.3s; }
-        .link-btn:hover { background: rgba(255,255,255,0.1); }
+        .link-btn { position: relative; overflow: hidden; transition: all 0.3s; text-decoration: none;}
+        .link-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
         [data-theme="light"] .link-btn:hover { background: rgba(0,0,0,0.05); }
 
         .job-card { background: var(--input-bg); border: 1px solid var(--panel-border); transition: all 0.3s ease; }
@@ -179,21 +232,26 @@
         .loader { border-top-color: var(--neon-blue); animation: spinner 1s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .pdf-section-title { display: none; margin-top: 20px; margin-bottom: 10px; font-size: 14px; font-weight: bold; color: var(--neon-pink); border-bottom: 1px solid var(--input-border); }
+        
+        #sidebarOverlay { transition: opacity 0.3s ease; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="h-screen flex overflow-hidden sidebar-open" id="bodyRoot">
 
     <div class="liquid-bg"></div>
 
-    <aside class="w-full md:w-[350px] p-6 flex flex-col z-30 border-r relative flex-shrink-0 overflow-y-auto" 
-           style="background-color: var(--sidebar-bg); border-color: var(--input-border);">
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-[350px] p-6 flex flex-col z-50 border-r border-[var(--input-border)] overflow-y-auto" 
+           style="background-color: var(--sidebar-bg);">
+        
         <div class="mb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-3xl tracking-tighter text-chrome italic mb-1">JobSpark</h1>
-                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">職涯戰情室 V4.6</span>
+                <span class="text-[10px] tracking-[0.2em] font-mono" style="color: var(--text-muted)">職涯戰情室 V5.0</span>
             </div>
-            <button onclick="toggleTheme()" class="btn-theme" title="切換背景主題">
-                <span id="themeIcon">☀</span>
+            <button onclick="toggleSidebar()" class="btn-icon md:hidden">
+                <span class="material-icons-round">close</span>
             </button>
         </div>
 
@@ -230,7 +288,11 @@
                     class="w-full p-3 input-liquid text-xs font-mono leading-relaxed resize-none"></textarea>
             </div>
 
-            <button onclick="startMiniGame()" class="w-full mt-4 py-3 border border-[var(--neon-pink)] text-[var(--neon-pink)] rounded hover:bg-[var(--neon-pink)] hover:text-white transition text-xs font-bold tracking-widest uppercase flex justify-center items-center gap-2">
+            <button onclick="generateInterviewQuestions()" class="w-full mt-4 py-3 border border-green-500 text-green-500 rounded hover:bg-green-500 hover:text-black transition text-xs font-bold tracking-widest uppercase flex justify-center items-center gap-2">
+                📝 生成面試模擬題庫
+            </button>
+
+            <button onclick="startMiniGame()" class="w-full mt-2 py-3 border border-[var(--neon-pink)] text-[var(--neon-pink)] rounded hover:bg-[var(--neon-pink)] hover:text-white transition text-xs font-bold tracking-widest uppercase flex justify-center items-center gap-2">
                 🎮 啟動職涯快問快答
             </button>
 
@@ -245,15 +307,26 @@
         </div>
 
         <div class="mt-6 pt-4 border-t flex justify-between items-center" style="border-color: var(--input-border);">
-            <span class="text-[10px]" style="color: var(--text-muted)">STATUS: <span class="text-green-500">ONLINE</span></span>
+            <div class="flex gap-3">
+                <button onclick="toggleTheme()" class="btn-icon" title="切換背景主題">
+                    <span id="themeIcon">☾</span>
+                </button>
+                <span class="text-[10px] self-center" style="color: var(--text-muted)">ONLINE</span>
+            </div>
             <button onclick="exportToPDF()" id="pdfBtn" class="hidden btn-pdf px-3 py-1 flex items-center gap-1">
                 <span>⇩ FULL PDF</span>
             </button>
         </div>
     </aside>
 
-    <main class="flex-grow p-4 md:p-8 flex flex-col h-full overflow-y-auto relative z-10 custom-scrollbar" id="mainContent">
+    <main id="mainContent" class="flex-grow p-4 md:p-8 flex flex-col h-full overflow-y-auto relative z-10 custom-scrollbar w-full">
         
+        <div class="absolute top-4 left-4 z-50">
+            <button onclick="toggleSidebar()" class="p-2 rounded-full glass-panel hover:bg-white/10 transition group">
+                <span class="material-icons-round text-2xl" style="color: var(--text-main)">menu</span>
+            </button>
+        </div>
+
         <div class="background-ghost-text">JobSpark</div>
 
         <div id="welcomeScreen" class="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
@@ -261,8 +334,9 @@
                 <div class="text-5xl mb-4 opacity-20" style="color: var(--text-main)">◈</div>
                 <h2 class="text-xl font-bold mb-2 tracking-widest" style="color: var(--text-main)">等待指令輸入</h2>
                 <p class="text-xs font-mono" style="color: var(--text-muted)">
-                    系統待命。請輸入參數以啟動 V4.6。<br>
-                    支援無限捲動模式，閱讀更舒適。
+                    系統待命。請輸入參數以啟動 V5.0。<br>
+                    支援 Coursera / Udemy / YouTube 資源鎖定。<br>
+                    新增：個人化職涯成長藍圖引擎 (Roadmap Engine)。
                 </p>
             </div>
         </div>
@@ -276,7 +350,7 @@
             </div>
         </div>
 
-        <div id="resultContainer" class="hidden flex-col w-full max-w-6xl mx-auto space-y-4 relative z-30 mb-10">
+        <div id="resultContainer" class="hidden flex-col w-full max-w-6xl mx-auto space-y-4 relative z-30 mb-10 pt-10">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
                 
                 <div class="glass-panel p-5 relative overflow-hidden group flex flex-col justify-between col-span-1">
@@ -318,10 +392,10 @@
 
             <div class="flex gap-4 border-b px-2 shrink-0 overflow-x-auto sticky top-0 bg-[var(--bg-body)]/80 backdrop-blur z-40 py-2" style="border-color: var(--panel-border)">
                 <button onclick="switchTab('report')" id="tab-report" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-pink)] tab-active">深度趨勢報告</button>
-                <button onclick="switchTab('resources')" id="tab-resources" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-blue)]">2025 最新資源</button>
+                <button onclick="switchTab('resources')" id="tab-resources" class="tab-liquid py-3 text-xs uppercase tracking-widest text-green-400">精選課程資源</button>
                 <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-blue)]">最新職缺</button>
                 <button onclick="switchTab('gap')" id="tab-gap" class="tab-liquid py-3 text-xs uppercase tracking-widest">適配與履歷</button>
-                <button onclick="switchTab('interview')" id="tab-interview" class="tab-liquid py-3 text-xs uppercase tracking-widest">面試題庫</button>
+                <button onclick="switchTab('roadmap')" id="tab-roadmap" class="tab-liquid py-3 text-xs uppercase tracking-widest text-[var(--neon-purple)]">未來藍圖</button>
             </div>
 
             <div id="contentPanel" class="glass-panel border-t-0 rounded-t-none p-6 min-h-[500px]" style="background-color: var(--input-bg);">
@@ -331,11 +405,11 @@
                 </div>
 
                 <div id="content-resources" class="hidden h-full">
-                    <div class="pdf-section-title">SECTION 2: 2025 學習資源</div>
+                    <div class="pdf-section-title">SECTION 2: 學習資源</div>
                     <h4 class="font-bold text-sm mb-4 uppercase tracking-widest flex items-center" style="color: var(--text-main)">
-                        <span class="text-lg mr-2">💎</span> 2025-2026 精選學習資源 (Live Links)
+                        <span class="text-lg mr-2">📚</span> 2025 精選學習資源 (Coursera, Udemy, YouTube)
                     </h4>
-                    <p class="text-xs mb-4" style="color: var(--text-muted)">系統已過濾並優先顯示 2024 下半年後發布之最新課程與技術文件。</p>
+                    <p class="text-xs mb-4" style="color: var(--text-muted)">系統已過濾並優先顯示來自三大權威平台的最新課程。</p>
                     <div id="resourceList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
 
@@ -363,18 +437,33 @@
                     </div>
                 </div>
 
-                <div id="content-interview" class="hidden space-y-4">
-                    <div class="pdf-section-title">SECTION 5: 面試題庫</div>
-                    <h4 class="font-bold text-xs uppercase mb-2" style="color: var(--text-muted)">Targeted Interview Questions</h4>
-                    <div id="interviewList" class="space-y-4"></div>
+                <div id="content-roadmap" class="hidden h-full">
+                    <div class="pdf-section-title">SECTION 5: 未來成長藍圖</div>
+                    <h4 class="font-bold text-sm mb-6 uppercase tracking-widest flex items-center" style="color: var(--text-main)">
+                        <span class="text-lg mr-2">🚀</span> Personalized Career Roadmap
+                    </h4>
+                    <div id="roadmapContainer" class="relative border-l-2 border-[var(--neon-purple)] ml-3 space-y-8 pb-4 my-6">
+                        </div>
                 </div>
             </div>
             
             <div class="text-center text-[10px] font-mono pt-2 pb-8 opacity-50" style="color: var(--text-muted)">
-                GENERATED BY JOBSPARK V4.6 // AI ARCHITECT
+                GENERATED BY JOBSPARK V5.0 // AI ARCHITECT
             </div>
         </div>
     </main>
+
+    <div id="interviewModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="glass-panel p-6 w-full max-w-2xl relative border-green-500 border-2 max-h-[80vh] flex flex-col">
+            <button onclick="document.getElementById('interviewModal').classList.add('hidden')" class="absolute top-2 right-4 text-2xl text-[var(--text-muted)] hover:text-white">&times;</button>
+            <h3 class="text-xl font-bold text-green-500 mb-2 tracking-widest text-center">INTERVIEW SIMULATOR</h3>
+            <p id="interviewStatus" class="text-xs text-[var(--text-muted)] mb-4 text-center font-mono animate-pulse">Generating tailored questions...</p>
+            <div id="interviewContent" class="flex-1 overflow-y-auto custom-scrollbar p-4 bg-black/30 rounded border border-white/10 space-y-4"></div>
+            <button onclick="generateInterviewQuestions()" class="mt-4 w-full py-3 bg-green-600 text-white font-bold rounded text-xs hover:bg-green-500 transition">
+                🔄 重新生成題目
+            </button>
+        </div>
+    </div>
 
     <div id="gameModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm">
         <div class="glass-panel p-6 w-full max-w-lg relative border-[var(--neon-pink)] border-2">
@@ -407,6 +496,38 @@
     </div>
 
     <script>
+        // Sidebar Toggle Logic
+        function toggleSidebar() {
+            const body = document.getElementById('bodyRoot');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (body.classList.contains('sidebar-open')) {
+                body.classList.remove('sidebar-open');
+                body.classList.add('sidebar-closed');
+                overlay.classList.add('hidden');
+            } else {
+                body.classList.remove('sidebar-closed');
+                body.classList.add('sidebar-open');
+                if (window.innerWidth < 768) {
+                    overlay.classList.remove('hidden');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.innerWidth < 768) {
+                document.getElementById('bodyRoot').classList.remove('sidebar-open');
+                document.getElementById('bodyRoot').classList.add('sidebar-closed');
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            const overlay = document.getElementById('sidebarOverlay');
+            if (window.innerWidth >= 768) {
+                overlay.classList.add('hidden');
+            }
+        });
+
         let lastAnalysisData = null;
         let radarChartInstance = null;
         
@@ -431,7 +552,7 @@
         }
 
         function switchTab(tabName) {
-            ['report', 'resources', 'jobs', 'gap', 'interview'].forEach(t => {
+            ['report', 'resources', 'jobs', 'gap', 'roadmap'].forEach(t => {
                 document.getElementById(`content-${t}`).classList.add('hidden');
                 document.getElementById(`content-${t}`).classList.remove('block');
                 document.getElementById(`tab-${t}`).classList.remove('tab-active');
@@ -443,27 +564,26 @@
 
         function cleanJsonString(str) {
             str = str.replace(/```json/g, "").replace(/```/g, "").trim();
-            // 嘗試修復非法換行，但最好的方式是 prompt 結構優化
             return str.replace(/(?:\r\n|\r|\n)/g, '\\n');
         }
 
         async function fetchGeminiData(apiKey, params) {
             const backgroundInfo = params.userBackground.trim() || "未提供 (請根據職涯等級假設一位該領域的標準求職者能力)";
             
-            // V4.1 核心改進：分離長文本 (Split Strategy)
-            // 讓 AI 先吐 JSON (結構化數據)，再吐報告 (Markdown)，中間用特殊符號隔開
             const prompt = `
-            你現在是 JobSpark V4.1 的首席職涯分析師。
+            你現在是 JobSpark V5.0 的首席職涯分析師。
             【使用者輸入】目標職缺：${params.jobTitle}, 職涯等級：${params.userLevel}, 背景：${backgroundInfo}
             
             【核心任務】
             1. 執行 Google Search，嚴格篩選 **2025年至2026年** 的最新趨勢資料。
-            2. 尋找學習資源時，請優先搜尋 **2024下半年以後** 發布的最新課程、技術文件或 Roadmap。
-            3. **關於雷達圖數值 (Critical)**：
-               - 若背景為 "未提供" 或空白，**請務必將 radar_chart 中的 'user_data' 全部設為 0** (代表使用者目前無相關能力，需從零開始)。
-               - 若背景有內容，則根據內容評估 'user_data'。
-               - 'market_data' 請始終根據市場標準填寫高標分數。
-            4. 撰寫一份 **深度且完整** 的市場報告。
+            2. 尋找學習資源時，請**嚴格限定於 Coursera, Udemy, YouTube 這三個平台**。
+            3. **關於雷達圖數值**：若背景為空，user_data 全設為 0。
+            4. **新增任務：職涯成長藍圖 (Roadmap)**：
+               請根據使用者的能力缺口，生成一份「3階段個人化成長藍圖」，分為:
+               - Phase 1: 短期 (1-3個月) - 基礎補強
+               - Phase 2: 中期 (3-6個月) - 核心深化
+               - Phase 3: 長期 (6-12個月) - 專家佈局
+               每個階段包含一個核心目標 (goal) 和 2-3 個具體行動 (actions)。
 
             【輸出格式 - 嚴格遵守】
             請先輸出一個 **有效的 JSON 物件** 包含數據，接著換行輸出分隔符號 "<<<REPORT_START>>>"，最後直接輸出 **Markdown 格式的報告** (不要放在 JSON 裡)。
@@ -475,13 +595,31 @@
               "radar_chart": { "labels": ["A","B"], "market_data": [80,90], "user_data": [60,70] },
               "skill_gap_analysis": "差距分析...",
               "resume_suggestion": "建議...",
-              "learning_resources": [{ "skill": "React", "type": "Course", "name": "Name", "platform": "Udemy", "url": "http" }],
+              "learning_resources": [
+                  { "title": "Title", "platform": "Coursera", "url": "http..." }
+              ],
               "latest_jobs": [{ "company": "Co", "title": "Job", "location": "Loc", "url": "http" }],
-              "interview_questions": [{ "q": "Q1", "a": "A1" }]
+              "roadmap": [
+                { 
+                  "phase": "Phase 1: 基礎奠基 (1-3個月)", 
+                  "goal": "補足 Python 與 資料清理 弱項",
+                  "actions": ["完成 Pandas 實戰課程", "實作一個爬蟲專案"] 
+                },
+                { 
+                  "phase": "Phase 2: 核心深化 (3-6個月)", 
+                  "goal": "掌握模型部署與雲端技能", 
+                  "actions": ["學習 AWS/GCP 基礎", "將模型包裝成 API"] 
+                },
+                { 
+                  "phase": "Phase 3: 專家佈局 (6-12個月)", 
+                  "goal": "建立個人品牌與架構思維", 
+                  "actions": ["貢獻開源專案", "撰寫技術部落格"] 
+                }
+              ]
             }
             <<<REPORT_START>>>
             ### 2025 深度趨勢報告
-            這裡開始寫詳細的 Markdown 報告內容，可以自由換行，不用擔心 JSON 格式錯誤...
+            這裡開始寫詳細的 Markdown 報告內容...
             `;
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -496,33 +634,27 @@
                 
                 const rawText = data.candidates[0].content.parts[0].text;
                 
-                // V4.1 解析邏輯：分割 JSON 與 Markdown
                 const separator = "<<<REPORT_START>>>";
                 let jsonData = {};
                 let reportMarkdown = "";
 
                 if (rawText.includes(separator)) {
                     const parts = rawText.split(separator);
-                    // 清洗 JSON 部分 (移除 markdown code block 標記)
                     let jsonStr = parts[0].replace(/```json/g, "").replace(/```/g, "").trim();
                     try {
                         jsonData = JSON.parse(jsonStr);
                     } catch (e) {
-                        // 容錯：嘗試修復換行
                         jsonStr = jsonStr.replace(/(?:\r\n|\r|\n)/g, ''); 
                         jsonData = JSON.parse(jsonStr);
                     }
                     reportMarkdown = parts[1].trim();
                 } else {
-                    // Fallback: 如果 AI 忘記分隔符，嘗試直接解析
                     let cleanText = cleanJsonString(rawText);
                     jsonData = JSON.parse(cleanText);
                     reportMarkdown = jsonData.full_report_text || "無法取得詳細報告，請參考數據分析。";
                 }
 
-                // 將分離的報告合併回物件，方便後續處理
                 jsonData.full_report_text = reportMarkdown;
-                
                 return jsonData;
 
             } catch (error) { console.error(error); throw error; }
@@ -553,10 +685,7 @@
                     }]
                 },
                 options: {
-                    // 【修正關鍵】：增加圖表內距，防止 PDF 輸出時文字標籤被切到
-                    layout: {
-                        padding: 20 
-                    },
+                    layout: { padding: 20 },
                     responsive: true, maintainAspectRatio: false,
                     scales: {
                         r: {
@@ -574,7 +703,7 @@
             });
         }
 
-        const scanLogs = [">> CONNECTING 2025 NODE...", ">> FILTERING OUTDATED DATA...", ">> ANALYZING FUTURE TRENDS...", ">> FETCHING LATEST RESOURCES...", ">> COMPILING DEEP REPORT..."];
+        const scanLogs = [">> CONNECTING 2025 NODE...", ">> FILTERING COURSERA/UDEMY/YT...", ">> MAPPING CAREER ROADMAP...", ">> ANALYZING FUTURE TRENDS...", ">> COMPILING REPORT..."];
         async function startAnalysis() {
              const apiKey = document.getElementById('geminiKey').value.trim();
             const jobTitle = document.getElementById('jobTitle').value;
@@ -589,6 +718,11 @@
             document.getElementById('welcomeScreen').classList.add('hidden');
             document.querySelector('.background-ghost-text').style.display = 'none';
             document.getElementById('resultContainer').classList.add('hidden');
+            
+            if (window.innerWidth < 768) {
+                document.getElementById('bodyRoot').classList.remove('sidebar-open');
+                document.getElementById('bodyRoot').classList.add('sidebar-closed');
+            }
             
             const scanner = document.getElementById('scannerOverlay');
             const logText = document.getElementById('terminalLog');
@@ -609,14 +743,20 @@
                 // Resources
                 if (data.learning_resources) {
                     document.getElementById('resourceList').innerHTML = data.learning_resources.map(item => {
-                        const safeUrl = item.url && item.url.startsWith('http') ? item.url : `https://www.google.com/search?q=${encodeURIComponent(item.name)}`;
-                        return `<a href="${safeUrl}" target="_blank" class="link-btn flex flex-col p-4 rounded-lg border hover:bg-white/10 transition group no-underline" style="background-color: var(--input-bg); border-color: var(--panel-border);">
+                        let badgeColor = "text-gray-500 border-gray-500";
+                        let icon = "school";
+                        const p = item.platform.toLowerCase();
+                        if (p.includes("youtube")) { badgeColor = "text-[var(--yt-red)] border-[var(--yt-red)]"; icon = "play_circle"; }
+                        else if (p.includes("coursera")) { badgeColor = "text-[var(--coursera-blue)] border-[var(--coursera-blue)]"; icon = "language"; }
+                        else if (p.includes("udemy")) { badgeColor = "text-[var(--udemy-purple)] border-[var(--udemy-purple)]"; icon = "stars"; }
+
+                        return `<a href="${item.url}" target="_blank" class="link-btn flex flex-col p-4 rounded-lg border hover:bg-white/10 transition group no-underline" style="background-color: var(--input-bg); border-color: var(--panel-border);">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs font-bold text-black bg-white px-2 py-0.5 rounded mr-2">${item.skill}</span>
-                                <span class="text-[10px] border px-2 rounded-full" style="color: var(--text-muted); border-color: var(--text-muted)">${item.type}</span>
+                                <span class="text-xs font-bold ${badgeColor} border px-2 py-0.5 rounded-full flex items-center uppercase gap-1">
+                                    <span class="material-icons-round text-[10px]">${icon}</span> ${item.platform}
+                                </span>
                             </div>
-                            <div class="font-bold text-sm mb-1 line-clamp-2" style="color: var(--text-main)">${item.name}</div>
-                            <div class="text-[10px] font-mono mt-auto pt-2" style="color: var(--text-muted)">PLATFORM: ${item.platform}</div>
+                            <div class="font-bold text-sm mb-1 line-clamp-2" style="color: var(--text-main)">${item.title}</div>
                         </a>`;
                     }).join('');
                 }
@@ -639,14 +779,28 @@
                     }).join('');
                 }
 
-                // Interview
-                document.getElementById('interviewList').innerHTML = data.interview_questions.map((item, i) => `
-                    <div class="p-4 rounded border transition" style="background-color: var(--input-bg); border-color: var(--panel-border);">
-                        <div class="flex items-start gap-3">
-                            <span class="text-[var(--neon-blue)] font-bold font-mono">Q${i+1}</span>
-                            <div><h5 class="text-sm font-bold mb-2" style="color: var(--text-main)">${item.q}</h5><p class="text-xs font-mono border-l pl-2" style="color: var(--text-muted); border-color: var(--text-muted)">💡 ${item.a}</p></div>
+                // Render Roadmap
+                if (data.roadmap) {
+                    document.getElementById('roadmapContainer').innerHTML = data.roadmap.map((step, index) => `
+                        <div class="ml-6 relative">
+                            <span class="absolute -left-[31px] top-0 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--bg-body)] border-2 border-[var(--neon-purple)] text-[var(--neon-purple)] font-bold text-[10px]">
+                                ${index + 1}
+                            </span>
+                            <div class="glass-panel p-4 rounded-lg border border-[var(--panel-border)] hover:border-[var(--neon-purple)] transition duration-300">
+                                <h5 class="text-xs font-bold uppercase tracking-widest mb-1 text-[var(--neon-purple)]">${step.phase}</h5>
+                                <h3 class="text-lg font-bold mb-3 text-[var(--text-main)]">${step.goal}</h3>
+                                <ul class="space-y-2">
+                                    ${step.actions.map(action => `
+                                        <li class="flex items-start gap-2 text-sm text-[var(--text-muted)]">
+                                            <span class="text-[var(--neon-blue)] mt-1">▹</span>
+                                            <span>${action}</span>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
                         </div>
-                    </div>`).join('');
+                    `).join('');
+                }
 
                 document.getElementById('fullReportText').innerHTML = marked.parse(data.full_report_text);
                 
@@ -657,7 +811,7 @@
                 switchTab('report');
 
             } catch (err) {
-                alert("分析失敗：資料格式異常 (" + err.message + ")，請重試。\n(AI 生成內容具有隨機性，通常重試即可解決)"); 
+                alert("分析失敗：" + err.message); 
                 console.error(err);
                 document.querySelector('.background-ghost-text').style.display = 'block';
             } finally {
@@ -667,31 +821,71 @@
                 document.getElementById('btnText').innerText = "重新掃描";
             }
         }
+
+        async function generateInterviewQuestions() {
+            const apiKey = document.getElementById('geminiKey').value.trim();
+            const jobTitle = document.getElementById('jobTitle').value || "Professional";
+            const userLevel = document.getElementById('userLevel').value;
+            
+            if (!apiKey) { alert("請先輸入 API Key"); return; }
+            
+            const modal = document.getElementById('interviewModal');
+            const content = document.getElementById('interviewContent');
+            const status = document.getElementById('interviewStatus');
+            
+            modal.classList.remove('hidden');
+            content.innerHTML = '';
+            status.innerText = "正在分析您的背景與職缺需求，生成客製化題庫...";
+            
+            const prompt = `
+            請針對「${userLevel}」的「${jobTitle}」職位，生成 5 題高機率面試題（包含技術題與行為題）。
+            每題請包含：
+            1. 問題 (Q)
+            2. 建議回答方向 (A) - 請提供具體的回答架構或重點。
+            請直接使用 Markdown 格式輸出。
+            `;
+            
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                const mdText = data.candidates[0].content.parts[0].text;
+                
+                content.innerHTML = marked.parse(mdText);
+                status.innerText = "✅ 生成完成！";
+                
+                const listItems = content.querySelectorAll('li');
+                listItems.forEach(li => li.classList.add('mb-2'));
+                const headings = content.querySelectorAll('h3, h4');
+                headings.forEach(h => h.classList.add('text-green-400', 'font-bold', 'mt-4', 'mb-2'));
+                
+            } catch (e) {
+                status.innerText = "❌ 生成失敗";
+                content.innerText = e.message;
+            }
+        }
+
         function exportToPDF() {
-            // 1. 鎖定要輸出的元素
             const element = document.getElementById('resultContainer');
             const contentPanel = document.getElementById('contentPanel');
             const titles = document.querySelectorAll('.pdf-section-title');
-            
-            // 2. 暫存原本的 Style (為了之後復原)
             const originalBodyStyle = document.body.style.cssText;
             const originalElementStyle = element.getAttribute('style') || '';
             const originalPanelStyle = contentPanel.getAttribute('style') || '';
             
-            // 3. 【關鍵修正】強制展開所有內容，拿掉捲軸限制
-            // 讓內容可以自然撐開，這樣 PDF 分頁才會正常
             document.body.style.height = 'auto';
             document.body.style.overflow = 'visible';
-            
             element.style.width = '100%';
             element.style.maxWidth = '100%';
             element.style.height = 'auto';
             element.style.overflow = 'visible';
-            element.style.background = '#ffffff'; // 強制白底
-            element.style.color = '#000000';      // 強制黑字
+            element.style.background = '#ffffff';
+            element.style.color = '#000000';
             element.style.padding = '20px';
-            
-            // 修正半透明面板，改為純白背景，去除陰影以免截圖模糊
             contentPanel.style.background = '#ffffff';
             contentPanel.style.boxShadow = 'none';
             contentPanel.style.border = '1px solid #ddd';
@@ -699,8 +893,8 @@
             contentPanel.style.height = 'auto';
             contentPanel.style.overflow = 'visible';
 
-            // 4. 把所有隱藏的 Tab 內容都打開，這樣 PDF 才有完整報告
-            const sections = ['content-report', 'content-resources', 'content-jobs', 'content-gap', 'content-interview'];
+            // Add 'content-roadmap' to export
+            const sections = ['content-report', 'content-resources', 'content-jobs', 'content-gap', 'content-roadmap'];
             const originalTabState = {};
             sections.forEach(id => {
                 const el = document.getElementById(id);
@@ -708,77 +902,45 @@
                     originalTabState[id] = el.classList.contains('hidden');
                     el.classList.remove('hidden');
                     el.classList.add('block');
-                    el.style.marginBottom = "30px"; // 增加段落間距
-                    
-                    // 強制修正內部文字顏色
+                    el.style.marginBottom = "30px";
                     const allText = el.querySelectorAll('*');
                     allText.forEach(node => {
                         node.style.color = '#000000';
-                        if(node.tagName === 'A') node.style.color = 'blue'; // 連結保持藍色
+                        if(node.tagName === 'A') node.style.color = 'blue';
                     });
                 }
             });
 
-            // 顯示 PDF 專用標題
-            titles.forEach(t => {
-                t.style.display = 'block';
-                t.style.color = '#f72585'; // 保持標題顏色
-                t.style.borderBottom = '2px solid #eee';
-            });
+            titles.forEach(t => { t.style.display = 'block'; t.style.color = '#f72585'; t.style.borderBottom = '2px solid #eee'; });
 
-            // 5. 設定 html2pdf 參數
             const opt = {
-                margin:       0.3, // [調整] 稍微縮小邊距，讓圖表有更多空間
-                filename:     'JobSpark_Full_Report.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, // 提高解析度
-                    useCORS: true, // 允許跨域圖片
-                    backgroundColor: '#ffffff', // 畫布背景全白
-                    scrollY: 0 // 重置捲動位置
-                },
-                jsPDF:        { unit: 'in', format: 'a3', orientation: 'portrait' },
-                // 自動分頁設定：避免切斷文字或圖表
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+                margin: 0.3,
+                filename: 'JobSpark_Full_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
             };
 
-            // 6. 生成並下載，完成後復原樣式
             html2pdf().set(opt).from(element).save().then(() => {
-                // --- 復原工作 ---
                 document.body.style.cssText = originalBodyStyle;
                 element.setAttribute('style', originalElementStyle);
                 contentPanel.setAttribute('style', originalPanelStyle);
-                
                 sections.forEach(id => {
                     const el = document.getElementById(id);
                     if(el) {
-                        // 復原顯示狀態
-                        if (originalTabState[id]) {
-                            el.classList.add('hidden');
-                            el.classList.remove('block');
-                        } else {
-                            el.classList.add('block');
-                            el.classList.remove('hidden');
-                        }
+                        if (originalTabState[id]) { el.classList.add('hidden'); el.classList.remove('block'); } else { el.classList.add('block'); el.classList.remove('hidden'); }
                         el.style.marginBottom = "";
-                        // 移除強制顏色 (讓 CSS 類別接手)
                         const allText = el.querySelectorAll('*');
                         allText.forEach(node => node.style.color = '');
                     }
                 });
-                
                 titles.forEach(t => t.style.display = 'none');
-                
-                // 確保切回原本的 Tab
                 switchTab('report');
-                
                 alert("報告下載完成！");
             });
         }
 
-        // ==========================================
-        //  小遊戲邏輯 (Game Logic)
-        // ==========================================
         let currentGameData = null;
         let currentQuestionIndex = 0;
         let userScore = 0;
@@ -791,15 +953,12 @@
             document.getElementById('gameContent').innerHTML = '<div class="text-center text-[var(--text-muted)] animate-pulse">正在生成挑戰題目...</div>';
             document.getElementById('gameResult').classList.add('hidden');
             document.getElementById('gameTitle').innerText = "LOADING GAME...";
-            
-            // 使用嚴格的單行 JSON 格式
             const prompt = `你是一個面試官的小遊戲主持人。職缺：${jobTitle}。請生成3題情境快問快答。格式：純JSON字串(Single-line, no markdown){"title":"標題","questions":[{"id":1,"q":"題目?","options":["A.1","B.2","C.3"],"answer":"A","explanation":"解析"}],"result_comment":"評語"}`;
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
                 const response = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
                 const data = await response.json();
                 let rawText = data.candidates[0].content.parts[0].text;
-                // 簡單清洗即可，因為小遊戲回傳的內容短，不太會出錯
                 let cleanedText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
                 currentGameData = JSON.parse(cleanedText);
                 currentQuestionIndex = 0; userScore = 0;
@@ -843,11 +1002,7 @@
             document.getElementById('gameResult').classList.add('hidden');
         }
 
-        // ==========================================
-        //  穿搭骰子邏輯
-        // ==========================================
         const styleVibes = ["Smart Casual", "Business Professional", "Creative Modern", "Tech Startup Hoodie Chic", "Minimalist Elegant", "Classic Formal"];
-
         function rollStyleDice() {
             const jobTitle = document.getElementById('jobTitle').value || "Professional";
             const randomVibe = styleVibes[Math.floor(Math.random() * styleVibes.length)];
